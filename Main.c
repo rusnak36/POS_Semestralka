@@ -3,8 +3,7 @@
 
 int main() {
 
-    printf("Heureka!");
-    printf("FU MILAN!");
 
-    return 0;
+
+   return 0;
 }
