@@ -3,4 +3,6 @@ project(POS_Semestralka C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(POS_Semestralka Main.c server.c client.c)
+add_executable(Main Main.c)
+add_executable(Server server.c)
+add_executable(Client client.c)
