@@ -14,8 +14,7 @@ typedef struct client{
 } Client;
 
 typedef struct data{
-    //Client* client;
-    //char** buffer;
+    Client* client;
     int index;
     int k;
     int n;
@@ -48,39 +47,31 @@ void *generate(void *d){
         }
         printf("Here is the message: %s\n", buffer);
 
-        char* input = buffer;
-        char delimiter[] = " ";
-        char *firstWord, *context;
+        char* msg = buffer;
+        char* command = "";
+        int user;
 
-        int inputLength = strlen(input);
-        char *inputCopy = (char*) calloc(inputLength + 1, sizeof(char));
-        strncpy(inputCopy, input, inputLength);
+        command = strtok_r(msg, " ", &msg);
+        user = atoi(strtok_r(msg, " ", &msg));
 
-        firstWord = strtok_r (inputCopy, delimiter, &context);
-        printf("%s\n", firstWord);
-        free(inputCopy);
+        printf("Client(%d)\n", client->id);
+        printf("Pouzil prikaz: %s\n", command);
+        printf("Pre osobu: %d\n", user);
+        printf("S obsahom: %s\n", msg);
 
-        char* msg = "Random sprava";
-        if(strcmp(reg, firstWord) == 0) {
-            msg = "Uspesne si sa registroval!";
-        }
-        if(strcmp(login, firstWord) == 0) {
-            msg = "Uspesne si sa prihlasil!";
-        }
 
-        n = write(client->id, msg, strlen(msg)+1);
+        n = write(user, msg, strlen(msg)+1);
         if (n < 0)
         {
             perror("Error writing to socket");
             exit(5);
         }
     }
-    printf("Client(%d) ukoncil spojenie!\n", client->id);
     close(client->id);
 }
 
 void *print(void *d){
-    Data* data = d;
+    //Data* data = d;
     int sockfd, newsockfd;
     socklen_t cli_len;
     struct sockaddr_in serv_addr, cli_addr;
@@ -133,9 +124,9 @@ int main(int argc, char *argv[])
 
     pthread_t printer;
 
-    Data data = {0, 10, 100, &mutex, &cGenerate, &cPrint};
+    //Data data = {0, 10, 100, &mutex, &cGenerate, &cPrint};
 
-    pthread_create(&printer, NULL, print, &data);
+    pthread_create(&printer, NULL, print, NULL);
 
     pthread_join(printer, NULL);
 
