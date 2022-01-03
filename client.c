@@ -6,6 +6,42 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
+
+void *mWrite(int sockfd){
+    int n;
+    char buffer[256];
+
+    while(1){
+        bzero(buffer,256);
+        fgets(buffer, 255, stdin);
+
+        n = write(sockfd, buffer, strlen(buffer));
+        if (n < 0)
+        {
+            perror("Error writing to socket");
+            return 5;
+        }
+    }
+    return NULL;
+}
+
+void *mRead(int sockfd){
+    int n;
+    char buffer[256];
+
+    while(1){
+        bzero(buffer,256);
+        n = read(sockfd, buffer, 255);
+        if (n < 0)
+        {
+            perror("Error reading from socket");
+            return 6;
+        }
+        printf("%s\n",buffer);
+    }
+    return NULL;
+}
 
 int main(int argc, char *argv[])
 {
@@ -50,28 +86,38 @@ int main(int argc, char *argv[])
         return 4;
     }
 
-    while(1) {
-        printf("Please enter a message: ");
-        bzero(buffer,256);
-        fgets(buffer, 255, stdin);
+    //todo login/register
+    pthread_t tRead;
+    pthread_t tWrite;
 
-        n = write(sockfd, buffer, strlen(buffer));
-        if (n < 0)
-        {
-            perror("Error writing to socket");
-            return 5;
-        }
+    pthread_create(&tRead, NULL, &mRead, sockfd);
+    pthread_create(&tWrite, NULL, &mWrite, sockfd);
 
-        bzero(buffer,256);
-        n = read(sockfd, buffer, 255);
-        if (n < 0)
-        {
-            perror("Error reading from socket");
-            return 6;
-        }
+    pthread_join(tRead, NULL);
+    pthread_join(tWrite, NULL);
 
-        printf("%s\n",buffer);
-    }
+//    while(1) {
+//        printf("Please enter a message: ");
+//        bzero(buffer,256);
+//        fgets(buffer, 255, stdin);
+//
+//        n = write(sockfd, buffer, strlen(buffer));
+//        if (n < 0)
+//        {
+//            perror("Error writing to socket");
+//            return 5;
+//        }
+//
+//        bzero(buffer,256);
+//        n = read(sockfd, buffer, 255);
+//        if (n < 0)
+//        {
+//            perror("Error reading from socket");
+//            return 6;
+//        }
+//
+//        printf("%s\n",buffer);
+//    }
 
     close(sockfd);
 
