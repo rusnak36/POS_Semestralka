@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 
 typedef struct client{
@@ -29,52 +30,140 @@ void *generate(void *d){
     char buffer[256];
 
     while(1){
-        if (client->id < 0)
-        {
+
+        if (client->id < 0) {
             perror("ERROR on accept");
             exit(3);
         }
 
         bzero(buffer,256);
         n = read(client->id, buffer, 255);
-        if (n < 0)
-        {
+        if (n < 0) {
             perror("Error reading from socket");
             exit(4);
         }
+        printf(buffer);
         printf("Here is the message: %s\n", buffer);
+        if(strlen(buffer) < 2) {
+            printf("Preventol som kokotinu!!!\n");
+            sleep(3);
+            continue;
+        }
 
         char* msg = buffer;
-        char* command = "";
+        char* command;
+        char *name;
+        char *password;
         int user;
+        char text[201];
 
-        command = strtok_r(msg, " ", &msg);
-        user = atoi(strtok_r(msg, " ", &msg));
+        command = strtok(buffer, " ");
 
-
+        printf("Here is the message4: %s\n", buffer);
+        printf("\n");
 
         if(!strcmp(command, "log")){
-            printf("snazim sa lognut uzivatela\n");
+            name = strtok(NULL, " ");
+            password = strtok(NULL, " ");
+            printf("snazim sa lognut uzivatela!!!!!!!!!!!!!\n");
             //checkni txt ci tam existuje
+            FILE *fptr;
+            fptr = fopen("/home/hubocan9/userData.txt","r");
+            if(fptr == NULL){
+                printf("Error! neviem otvorit\n");
+                break;
+            }
+            char line[256];
+            bool jeVsubore = false;
+
+            char tmp[256];
+            strcat(tmp, name);
+            strcat(tmp, " ");
+            strcat(tmp, password);
+            strcat(tmp, "\n");
+            printf("tmp: %s\n", tmp);
+            char* tname;
+            char* tpassword;
+
+            while(fgets(line, sizeof(line), fptr)){
+                tname = strtok(line, " ");
+                tpassword = strtok(NULL, " ");
+                tpassword[strlen(tpassword)-1] = 0;
+
+                if(!strcmp(tname, name)){
+                    if(!strcmp(tpassword, password)){
+                        jeVsubore = true;
+                        break;
+                    }
+                }
+                if(feof(fptr)){
+                    printf("dosiel som na koniec suboru.\n");
+                    break;
+                }
+            }
+
+            fclose(fptr);
+
             //logniho alebo ho posli dopice
-        } else if(!strcmp(command, "reg")){
+            //client->name = name;
+            if(jeVsubore) {
+                n = write(client->id, "ok", 3);
+            }else {
+                n = write(client->id, "nok", 4);
+            }
+
+            if (n < 0) {
+                perror("Error writing to socket");
+                exit(5);
+            }
+
+
+
+        } else if(!strcmp(command, "reg")) {
             printf("snazim sa registrovat uzivatela\n");
             //checkni txt ci tam neni meno obsadene
-            //restrujho alebo ho posli dopice
-        } else if (!strcmp(command, "msg")){
+            //registrujho alebo ho posli dopice
+
+        } else if (!strcmp(command, "msg")) {
+            printf("ZACINA MSG BS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+            user = atoi(strtok(NULL, " "));
+            printf("user: %d\n", user);
+            char * token = strtok(NULL, " ");
+            printf("token: %s\n", token);
+            bzero(text,201);
+            while(token != NULL){
+                strcat(text, token);
+                strcat(text, " ");
+                token = strtok(NULL, "");
+                printf("token: %s\n", token);
+            }
 
             printf("Client(%d)\n", client->id);
             printf("Pouzil prikaz: %s\n", command);
             printf("Pre osobu: %d\n", user);
-            printf("S obsahom: %s\n", msg);
+            printf("S obsahom: %s\n", text);
 
-            n = write(user, msg, strlen(msg)+1);
+            char tmp [256];
+            bzero(tmp,256);
+            printf("tmp: %s\n",tmp);
+            char tmpid[20];
+            sprintf(tmpid, "client: %d", client->id);
+            printf("tmpid: %s\n", tmpid);
+            strcat(tmp, tmpid);
+            strcat(tmp, ": ");
+            strcat(tmp, text);
+
+            printf("pozliepany string co posiela server clientovy: %s\n",tmp);
+            n = write(user, tmp, strlen(tmp)+1);
             if (n < 0)
             {
                 perror("Error writing to socket");
                 exit(5);
             }
+        } else if(!strcmp(command, "quit")){
+            exit(69);
         }
+
     }
     close(client->id);
 }
@@ -89,7 +178,7 @@ void *print(void *d){
     bzero((char*)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(26053);
+    serv_addr.sin_port = htons(26073);
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)

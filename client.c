@@ -17,8 +17,9 @@ void *mWrite(int sockfd){
     while(1){
         bzero(buffer,256);
         fgets(buffer, 255, stdin);
+        printf("%s\n",buffer);
 
-        n = write(sockfd, buffer, strlen(buffer));
+        n = write(sockfd, buffer, strlen(buffer)+1);
         if (n < 0)
         {
             perror("Error writing to socket");
@@ -117,7 +118,8 @@ int main(int argc, char *argv[])
             strcat(buffer, password);
             log = true;
 
-            n = write(sockfd, buffer, strlen(buffer+1));
+            printf("obsah buffera odoslaneho na server: %s\n", buffer);
+            n = write(sockfd, buffer, strlen(buffer));
             if (n < 0) {
                 perror("Error writing to socket");
                 return 6;
@@ -136,13 +138,12 @@ int main(int argc, char *argv[])
             scanf("%s", password);
 
             //poslem serveru ziadost o registraciu s udajmi name password
-            //vypisem ci sa podarila
-            strcat(buffer, "log ");
+            strcat(buffer, "reg ");
             strcat(buffer, name);
             strcat(buffer, " ");
             strcat(buffer, password);
 
-            n = write(sockfd, buffer, strlen(buffer+1));
+            n = write(sockfd, buffer, strlen(buffer));
             if (n < 0) {
                 perror("Error writing to socket");
                 return 6;
@@ -152,12 +153,21 @@ int main(int argc, char *argv[])
         printf("bad input. try again\n");
     }
 
-    scanf("%c", (char *) stdin);
     printf("\npost log/reg\n");
 
     //ak si sa prihlasoval
     if(log){
-        if(1){ // spravne udaje
+        n = read(sockfd, buffer, 255);
+        if (n < 0) {
+            perror("Error reading from socket");
+            return 6;
+        }
+        printf("obsah buffera odoslaneho z serveru: %s\n", buffer);
+        int result = strcmp(buffer, "ok");
+        printf("%d\n",result);
+
+        if(!strcmp(buffer, "ok")){ // spravne udaje
+
             pthread_t tRead;
             pthread_t tWrite;
 
@@ -180,7 +190,7 @@ int main(int argc, char *argv[])
             strcat(buffer, " ");
             strcat(buffer, password);
 
-            n = write(sockfd, buffer, strlen(buffer+1));
+            n = write(sockfd, buffer, strlen(buffer));
             if (n < 0) {
                 perror("Error writing to socket");
                 return 6;
