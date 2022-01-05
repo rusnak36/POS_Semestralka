@@ -142,6 +142,7 @@ int main(int argc, char *argv[])
             strcat(buffer, name);
             strcat(buffer, " ");
             strcat(buffer, password);
+            printf("NA SERVER POSIELAM TENTO STRING: %s\n", buffer);
 
             n = write(sockfd, buffer, strlen(buffer));
             if (n < 0) {
@@ -164,7 +165,7 @@ int main(int argc, char *argv[])
         }
         printf("obsah buffera odoslaneho z serveru: %s\n", buffer);
         int result = strcmp(buffer, "ok");
-        printf("%d\n",result);
+        printf("result: %d\n",result);
 
         if(!strcmp(buffer, "ok")){ // spravne udaje
 
@@ -182,22 +183,27 @@ int main(int argc, char *argv[])
 
 
     }else{ //registroval si sa
-        if(1){ // registracne udaje vyhovuju
-            memset(buffer,0,strlen(buffer));
-            // pokus o login
-            strcat(buffer, "log ");
-            strcat(buffer, name);
-            strcat(buffer, " ");
-            strcat(buffer, password);
+        n = read(sockfd, buffer, 255);
+        if (n < 0) {
+            perror("Error reading from socket");
+            return 6;
+        }
+        printf("obsah buffera odoslaneho z serveru: %s\n", buffer);
+        int result = strcmp(buffer, "Boli ste uspesne registrovany.");
+        printf("result: %d\n",result);
 
-            n = write(sockfd, buffer, strlen(buffer));
-            if (n < 0) {
-                perror("Error writing to socket");
-                return 6;
-            }
+        if(!strcmp(buffer, "Boli ste uspesne registrovany.")){ // spravne udaje
 
-        }else{ // registracne udaje nevyhovuju
-            printf("You need a new name mate!\n");
+            pthread_t tRead;
+            pthread_t tWrite;
+
+            pthread_create(&tRead, NULL, &mRead, sockfd);
+            pthread_create(&tWrite, NULL, &mWrite, sockfd);
+
+            pthread_join(tRead, NULL);
+            pthread_join(tWrite, NULL);
+        }else{ // nespravne udaje
+            printf("boha jeho treba novy nick!");
         }
     }
 
