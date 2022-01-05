@@ -49,7 +49,6 @@ void *generate(void *d){
             perror("Error reading from socket");
             exit(4);
         }
-        printf(buffer);
         printf("Here is the message: %s\n", buffer);
         if(strlen(buffer) < 2) {
             printf("Preventol som kokotinu!!!\n");
@@ -64,10 +63,13 @@ void *generate(void *d){
         char* user;
         char text[201];
 
-        command = strtok(buffer, " ");
-
-        printf("Here is the message4: %s\n", buffer);
-        printf("\n");
+        if(!strcmp(buffer, "quit\n")){
+            printf("rovnaju sa\n");
+            command = "quit";
+        }else{
+            printf("nerovnaju sa\n");
+            command = strtok(buffer, " ");
+        }
 
         // JEDNOTLIVE SPRAVY
         if(!strcmp(command, "log")){
@@ -84,12 +86,13 @@ void *generate(void *d){
             char line[256];
             bool jeVsubore = false;
 
-            char tmp[256];
-            strcat(tmp, name);
-            strcat(tmp, " ");
-            strcat(tmp, password);
-            strcat(tmp, "\n");
-            printf("tmp: %s\n", tmp);
+//            char tmp[256];
+//            strcat(tmp, name);
+//            strcat(tmp, " ");
+//            strcat(tmp, password);
+//            strcat(tmp, "\n");
+//            printf("tmp: %s\n", tmp);
+
             char* tname;
             char* tpassword;
 
@@ -103,10 +106,6 @@ void *generate(void *d){
                         jeVsubore = true;
                         break;
                     }
-                }
-                if(feof(fptr)){
-                    printf("dosiel som na koniec suboru.\n");
-                    break;
                 }
             }
 
@@ -163,10 +162,6 @@ void *generate(void *d){
                     jeVsubore = true;
                     break;
                 }
-                if(feof(fptr)){
-                    printf("dosiel som na koniec suboru.\n");
-                    break;
-                }
             }
             fclose(fptr);
 
@@ -203,21 +198,42 @@ void *generate(void *d){
             char * token = strtok(NULL, " ");
             printf("token: %s\n", token);
             bzero(text,201);
+
             while(token != NULL){
                 strcat(text, token);
                 strcat(text, " ");
-                token = strtok(NULL, "");
+                token = strtok(NULL, " ");
+
                 printf("token: %s\n", token);
             }
+            text[strlen(text)-1] = 0;
+
 
             printf("Client(%d)\n", client->newsockfd);
             printf("Pouzil prikaz: %s\n", command);
             printf("Pre osobu: %s\n", user);
             printf("S obsahom: %s\n", text);
 
+            FILE *fptr;
+            fptr = fopen("/home/hubocan9/msgLog.txt","a");
+            if(fptr == NULL){
+                printf("Error! neviem otvorit subor.\n");
+                break;
+            }
+            char *fetak[300];
+            bzero(fetak,300);
+            strcat(fetak, "n ");
+            strcat(fetak, client->name);
+            strcat(fetak, " ");
+            strcat(fetak, name);
+            strcat(fetak, " ");
+            strcat(fetak, text);
+            printf("line2: %s",fetak);
+            fprintf(fptr, fetak);
+            fclose(fptr);
+
             char tmp [256];
             bzero(tmp,256);
-            printf("tmp: %s\n",tmp);
             strcat(tmp, client->name);
             strcat(tmp, ": ");
             strcat(tmp, text);
@@ -234,18 +250,26 @@ void *generate(void *d){
                     break;
                 }
             }
-            n = write(x, tmp, strlen(tmp)+1);
-            if (n < 0)
-            {
+            n = write(x, tmp, strlen(tmp));// +1 za
+            if (n < 0) {
                 perror("Error writing to socket");
                 exit(5);
             }
         } else if(!strcmp(command, "quit")){
-            exit(69);
-        }
+            printf("idem quitnut usera: %s\n", client->name);
 
+            n = write(client->newsockfd, "terminujem ta", 14);
+            if (n < 0) {
+                perror("Error writing to socket");
+                exit(5);
+            }
+            client->name = "";
+            close(client->newsockfd);
+            client->newsockfd = 0;
+            printf("Bastard user died!\n");
+            break;
+        }
     }
-    close(client->newsockfd);
 }
 
 void *print(void *d){
@@ -254,11 +278,11 @@ void *print(void *d){
     socklen_t cli_len;
     struct sockaddr_in serv_addr, cli_addr;
     int n;
-
+    int portt = 26100;
     bzero((char*)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(26084);
+    serv_addr.sin_port = htons(portt);// ************************************ PREPISOVACIA MARHA ***********************************************************************************
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
@@ -269,9 +293,16 @@ void *print(void *d){
 
     if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        perror("Error binding socket address");
-        exit(2);
+        portt++;
+        serv_addr.sin_port = htons(portt);
+        if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
+        {
+            perror("Error binding socket address");
+            exit(2);
+        }
     }
+    printf("port: %d\n",portt);
+
 
     listen(sockfd, 5);
     cli_len = sizeof(cli_addr);

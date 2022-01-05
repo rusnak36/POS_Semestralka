@@ -17,7 +17,7 @@ void *mWrite(int sockfd){
     while(1){
         bzero(buffer,256);
         fgets(buffer, 255, stdin);
-        printf("%s\n",buffer);
+        printf("vypis obsahu buffera z write thready: %s\n",buffer);
 
         n = write(sockfd, buffer, strlen(buffer)+1);
         if (n < 0)
@@ -25,8 +25,10 @@ void *mWrite(int sockfd){
             perror("Error writing to socket");
             return 5;
         }
+        if(!strcmp(buffer, "quit\n")){
+            break;
+        }
     }
-    return NULL;
 }
 
 void *mRead(int sockfd){
@@ -42,8 +44,11 @@ void *mRead(int sockfd){
             return 6;
         }
         printf("%s\n",buffer);
+        if(!strcmp(buffer, "terminujem ta")){
+            printf("reeeeeeeeeeeeeeeee\n");
+            break;
+        }
     }
-    return NULL;
 }
 
 int main(int argc, char *argv[])
@@ -74,19 +79,23 @@ int main(int argc, char *argv[])
             (char*)&serv_addr.sin_addr.s_addr,
             server->h_length
     );
-    serv_addr.sin_port = htons(atoi(argv[2]));
+
+    int portt = 26100;
+    serv_addr.sin_port = htons(portt);
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-    {
+    if (sockfd < 0) {
         perror("Error creating socket");
         return 3;
     }
 
-    if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        perror("Error connecting to socket");
-        return 4;
+    if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        portt++;
+        serv_addr.sin_port = htons(portt);
+        if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+            perror("Error connecting to socket");
+            return 4;
+        }
     }
 
     // register/login
@@ -119,6 +128,8 @@ int main(int argc, char *argv[])
             log = true;
 
             printf("obsah buffera odoslaneho na server: %s\n", buffer);
+            printf("dlzka buffera(bez +1): %d\n", (int)strlen(buffer));
+
             n = write(sockfd, buffer, strlen(buffer));
             if (n < 0) {
                 perror("Error writing to socket");
@@ -164,11 +175,11 @@ int main(int argc, char *argv[])
             return 6;
         }
         printf("obsah buffera odoslaneho z serveru: %s\n", buffer);
-        int result = strcmp(buffer, "ok");
-        printf("result: %d\n",result);
+        printf("dlzka buffera: %d\n", (int)strlen(buffer));
 
         if(!strcmp(buffer, "ok")){ // spravne udaje
-
+            scanf("%c", (char *) stdin);
+            sleep(1);
             pthread_t tRead;
             pthread_t tWrite;
 
@@ -206,8 +217,6 @@ int main(int argc, char *argv[])
             printf("boha jeho treba novy nick!");
         }
     }
-
     close(sockfd);
-
     return 0;
 }
