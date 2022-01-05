@@ -11,33 +11,40 @@
 
 typedef struct client{
     char* name;
-    int id;
+    int newsockfd;
 } Client;
 
 typedef struct data{
-    Client* client;
     int index;
-    int k;
-    int n;
+    Client* client;
+    int size;
     pthread_mutex_t* mutex;
     pthread_cond_t* cGenerate;
     pthread_cond_t* cPrint;
 } Data;
 
 void *generate(void *d){
-    Client* client = d;
+
+    Data* data = d;
+
+    pthread_mutex_lock(data->mutex);
+    Client* client = data->client+data->index;
+    client->newsockfd = data->index;
+    pthread_mutex_unlock(data->mutex);
+
+
     int n;
     char buffer[256];
 
     while(1){
 
-        if (client->id < 0) {
+        if (client->newsockfd < 0) {
             perror("ERROR on accept");
             exit(3);
         }
 
         bzero(buffer,256);
-        n = read(client->id, buffer, 255);
+        n = read(client->newsockfd, buffer, 255);
         if (n < 0) {
             perror("Error reading from socket");
             exit(4);
@@ -54,7 +61,7 @@ void *generate(void *d){
         char* command;
         char *name;
         char *password;
-        int user;
+        char* user;
         char text[201];
 
         command = strtok(buffer, " ");
@@ -68,7 +75,7 @@ void *generate(void *d){
             printf("snazim sa lognut uzivatela!!!!!!!!!!!!!\n");
             //checkni txt ci tam existuje
             FILE *fptr;
-            fptr = fopen("/home/hubocan9/userData.txt","r");
+            fptr = fopen("/home/rusnak36/userData.txt","r");
             if(fptr == NULL){
                 printf("Error! neviem otvorit\n");
                 break;
@@ -105,11 +112,12 @@ void *generate(void *d){
             fclose(fptr);
 
             //logniho alebo ho posli dopice
-            //client->name = name;
+
             if(jeVsubore) {
-                n = write(client->id, "ok", 3);
+                n = write(client->newsockfd, "ok", 3);
+                client->name = strdup(name);
             }else {
-                n = write(client->id, "nok", 4);
+                n = write(client->newsockfd, "nok", 4);
             }
 
             if (n < 0) {
@@ -117,7 +125,7 @@ void *generate(void *d){
                 exit(5);
             }
 
-
+            continue;
 
         } else if(!strcmp(command, "reg")) {
             printf("snazim sa registrovat uzivatela\n");
@@ -126,7 +134,7 @@ void *generate(void *d){
 
         } else if (!strcmp(command, "msg")) {
             printf("ZACINA MSG BS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-            user = atoi(strtok(NULL, " "));
+            user = strtok(NULL, " ");
             printf("user: %d\n", user);
             char * token = strtok(NULL, " ");
             printf("token: %s\n", token);
@@ -138,23 +146,35 @@ void *generate(void *d){
                 printf("token: %s\n", token);
             }
 
-            printf("Client(%d)\n", client->id);
+            printf("Client(%d)\n", client->newsockfd);
             printf("Pouzil prikaz: %s\n", command);
-            printf("Pre osobu: %d\n", user);
+            printf("Pre osobu: %s\n", user);
             printf("S obsahom: %s\n", text);
 
             char tmp [256];
             bzero(tmp,256);
             printf("tmp: %s\n",tmp);
-            char tmpid[20];
-            sprintf(tmpid, "client: %d", client->id);
-            printf("tmpid: %s\n", tmpid);
-            strcat(tmp, tmpid);
+//            char tmpid[20];
+//            sprintf(tmpid, "%s", client->name);
+//            printf("tmpid: %s\n", tmpid);
+            strcat(tmp, client->name);
             strcat(tmp, ": ");
             strcat(tmp, text);
 
             printf("pozliepany string co posiela server clientovy: %s\n",tmp);
-            n = write(user, tmp, strlen(tmp)+1);
+
+            int x = client->newsockfd;
+            for (int i = 4; i < data->size; i++) {
+                if(!data->client[i].name == NULL) {
+                    if(!strcmp(data->client[i].name, user)) {
+                        x = data->client[i].newsockfd;
+                        break;
+                    }
+                } else {
+                    printf("%d\n", i);
+                }
+            }
+            n = write(x, tmp, strlen(tmp)+1);
             if (n < 0)
             {
                 perror("Error writing to socket");
@@ -165,11 +185,11 @@ void *generate(void *d){
         }
 
     }
-    close(client->id);
+    close(client->newsockfd);
 }
 
 void *print(void *d){
-    //Data* data = d;
+    Data* data = d;
     int sockfd, newsockfd;
     socklen_t cli_len;
     struct sockaddr_in serv_addr, cli_addr;
@@ -178,7 +198,7 @@ void *print(void *d){
     bzero((char*)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(26073);
+    serv_addr.sin_port = htons(26083);
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
@@ -196,13 +216,20 @@ void *print(void *d){
     listen(sockfd, 5);
     cli_len = sizeof(cli_addr);
 
-    newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &cli_len);
-    while(newsockfd > 0){
-        pthread_t generator;
-        Client* c = malloc(sizeof(Client));
-        c->id = newsockfd;
-        pthread_create(&generator, NULL, generate, c);
+
+    int pocetClientov = 1;
+    pthread_t generator;
+    while(data->index < data->size){
+
         newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &cli_len);
+        pocetClientov++;
+
+        data->index=newsockfd;
+
+        pthread_create(&generator, NULL, generate, data);
+    }
+    for(int i = 0; i < pocetClientov; i++) {
+        pthread_join(generator, NULL);
     }
 
     close(sockfd);
@@ -222,9 +249,21 @@ int main(int argc, char *argv[])
 
     pthread_t printer;
 
-    //Data data = {0, 10, 100, &mutex, &cGenerate, &cPrint};
+    Client client[100];
 
-    pthread_create(&printer, NULL, print, NULL);
+    for (int i = 0; i < 100; ++i) {
+        client[i].name = "";
+    }
+
+    Data data;
+    data.index=0;
+    data.size=100;
+    data.client = client;
+    data.mutex = &mutex;
+
+
+
+    pthread_create(&printer, NULL, print, &data);
 
     pthread_join(printer, NULL);
 
