@@ -84,38 +84,6 @@ void *mWrite(int sockfd){
             printf("original: %s", buffer);
             printf("    copy: %s\n", crypted);
 
-            //reverse
-//            if((strlen(text)-1) % 2 == 0){
-//                for(int i=0; i<strlen(text)-1; i+=2){
-//                    char c = text[i];
-//                    text[i] = text[i+1];
-//                    text[i+1] = c;
-//                }
-//            }else{
-//                for(int i=0; i<strlen(text)-2; i+=2){
-//                    char c = text[i];
-//                    text[i] = text[i+1];
-//                    text[i+1] = c;
-//                }
-//            }
-//            for(int i=0; i < strlen(text)-1; i++) {
-//                shift = i % 4;
-//                text[i] -= shift;
-//            }
-//            for(int i=0; i < strlen(text)-1; i++){
-//                text[i] -= 1;
-//            }
-//
-//            char* decrypted[300];
-//            bzero(decrypted,300);
-//            strcat(decrypted, command);
-//            strcat(decrypted, " ");
-//            strcat(decrypted, komu);
-//            strcat(decrypted, " ");
-//            strcat(decrypted, text);
-//            printf("original: %s", buffer);
-//            printf("    copy: %s\n", decrypted);
-
             n = write(sockfd, crypted, strlen(crypted)+1);
             if (n < 0) {
                 perror("Error writing to socket");
@@ -163,9 +131,12 @@ void *mRead(int sockfd){
 
             char* odkial;
             char text[201];
-            odkial = strtok(NULL, " ");
-            char * token = strtok(NULL, " ");
             bzero(text,201);
+            odkial = strtok(NULL, " ");
+            printf("odkial %s\n", odkial);
+
+            char * token = strtok(NULL, " ");
+            printf("token: %s\n",token);
 
             while(token != NULL){
                 strcat(text, token);
@@ -173,6 +144,7 @@ void *mRead(int sockfd){
                 token = strtok(NULL, " ");
             }
             text[strlen(text)-1] = 0;
+
             if((strlen(text)-1) % 2 == 0){
                 for(int i=0; i<strlen(text)-1; i+=2){
                     char c = text[i];
@@ -197,16 +169,54 @@ void *mRead(int sockfd){
 
             char decrypted[300];
             bzero(decrypted,300);
-            strcat(decrypted, command);
-            strcat(decrypted, " ");
+//            strcat(decrypted, command);
+
+//            strcat(decrypted, " ");
             strcat(decrypted, odkial);
             strcat(decrypted, " ");
+            printf("text: %s\n",text);
             strcat(decrypted, text);
             printf("%s\n", decrypted);
 
-        }else {
+        }else if (!strcmp(command, "n")){
             printf("nesifrovana sprava:\n");
-            printf("%s\n",buffer);
+
+            char* odkial;
+            char text[201];
+            odkial = strtok(NULL, " ");
+            char * token = strtok(NULL, " ");
+            bzero(text,201);
+
+
+            while(token != NULL){
+                strcat(text, token);
+                strcat(text, " ");
+                token = strtok(NULL, " ");
+            }
+            text[strlen(text)-1] = 0;
+            char final[300];
+            strcat(final,odkial);
+            strcat(final," ");
+            strcat(final,text);
+            printf("%s\n", final);
+        }else if(!strcmp(command, "show")){
+            printf("I AM HERE BITCHES!\n");
+
+            char text[300];
+            char * token = strtok(NULL, " ");
+            bzero(text,300);
+            while(token != NULL){
+                strcat(text, token);
+                strcat(text, " ");
+                token = strtok(NULL, " ");
+            }
+            text[strlen(text)-1] = 0;
+            printf("online su: %s\n", text);
+        }
+        else if(!strcmp(command, "friendRequest")){
+            char* newfriend;
+            newfriend = strtok(NULL, " ");
+            printf("%s si ta chce pridat ako priatela!\n",newfriend);
         }
     }
 }
