@@ -148,7 +148,6 @@ void *mRead(int sockfd){
             return 6;
         }
 
-        printf("%s\n",buffer);
         if(!strcmp(buffer, "terminujem ta")){
             printf("reeeeeeeeeeeeeeeee\n");
             break;
@@ -196,7 +195,7 @@ void *mRead(int sockfd){
                 text[i] -= 1;
             }
 
-            char* decrypted[300];
+            char decrypted[300];
             bzero(decrypted,300);
             strcat(decrypted, command);
             strcat(decrypted, " ");
