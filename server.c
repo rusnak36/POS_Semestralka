@@ -234,6 +234,7 @@ void *generate(void *d){
 
             char tmp [256];
             bzero(tmp,256);
+            strcat(tmp, "n ");
             strcat(tmp, client->name);
             strcat(tmp, ": ");
             strcat(tmp, text);
@@ -268,6 +269,71 @@ void *generate(void *d){
             client->newsockfd = 0;
             printf("Bastard user died!\n");
             break;
+        } else if(!strcmp(command, "msgC")){
+            printf("ZACINA MSGC BS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+            user = strtok(NULL, " ");
+            printf("user: %d\n", user);
+            char * token = strtok(NULL, " ");
+            printf("token: %s\n", token);
+            bzero(text,201);
+
+            while(token != NULL){
+                strcat(text, token);
+                strcat(text, " ");
+                token = strtok(NULL, " ");
+
+                printf("token: %s\n", token);
+            }
+            text[strlen(text)-1] = 0;
+
+
+            printf("Client(%d)\n", client->newsockfd);
+            printf("Pouzil prikaz: %s\n", command);
+            printf("Pre osobu: %s\n", user);
+            printf("S obsahom: %s\n", text);
+
+            FILE *fptr;
+            fptr = fopen("/home/hubocan9/msgLog.txt","a");
+            if(fptr == NULL){
+                printf("Error! neviem otvorit subor.\n");
+                break;
+            }
+            char *fetak[300];
+            bzero(fetak,300);
+            strcat(fetak, "n ");
+            strcat(fetak, client->name);
+            strcat(fetak, " ");
+            strcat(fetak, name);
+            strcat(fetak, " ");
+            strcat(fetak, text);
+            printf("line2: %s",fetak);
+            fprintf(fptr, fetak);
+            fclose(fptr);
+
+            char tmp [256];
+            bzero(tmp,256);
+            strcat(tmp, "s ");
+            strcat(tmp, client->name);
+            strcat(tmp, ": ");
+            strcat(tmp, text);
+
+            printf("pozliepany string co posiela server clientovy: %s\n",tmp);
+
+
+            // x je cislo na ktory socket treba poslat spravu
+            // na zaciatku je nastaveny samemu sebe
+            int x = client->newsockfd;
+            for (int i = 4; i < data->size; i++) {
+                if(!strcmp(data->client[i].name, user)) {
+                    x = data->client[i].newsockfd;
+                    break;
+                }
+            }
+            n = write(x, tmp, strlen(tmp));// +1 za
+            if (n < 0) {
+                perror("Error writing to socket");
+                exit(5);
+            }
         }
     }
 }

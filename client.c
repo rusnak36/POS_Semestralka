@@ -85,6 +85,95 @@ void *mWrite(int sockfd){
             printf("    copy: %s\n", crypted);
 
             //reverse
+//            if((strlen(text)-1) % 2 == 0){
+//                for(int i=0; i<strlen(text)-1; i+=2){
+//                    char c = text[i];
+//                    text[i] = text[i+1];
+//                    text[i+1] = c;
+//                }
+//            }else{
+//                for(int i=0; i<strlen(text)-2; i+=2){
+//                    char c = text[i];
+//                    text[i] = text[i+1];
+//                    text[i+1] = c;
+//                }
+//            }
+//            for(int i=0; i < strlen(text)-1; i++) {
+//                shift = i % 4;
+//                text[i] -= shift;
+//            }
+//            for(int i=0; i < strlen(text)-1; i++){
+//                text[i] -= 1;
+//            }
+//
+//            char* decrypted[300];
+//            bzero(decrypted,300);
+//            strcat(decrypted, command);
+//            strcat(decrypted, " ");
+//            strcat(decrypted, komu);
+//            strcat(decrypted, " ");
+//            strcat(decrypted, text);
+//            printf("original: %s", buffer);
+//            printf("    copy: %s\n", decrypted);
+
+            n = write(sockfd, crypted, strlen(crypted)+1);
+            if (n < 0) {
+                perror("Error writing to socket");
+                return 5;
+            }
+        }else{
+            n = write(sockfd, buffer, strlen(buffer)+1);
+            if (n < 0) {
+                perror("Error writing to socket");
+                return 5;
+            }
+            if(!strcmp(buffer, "quit\n")){
+                break;
+            }
+
+        }
+        free(dup);
+    }
+}
+
+void *mRead(int sockfd){
+    int n;
+    char buffer[256];
+
+    while(1){
+        bzero(buffer,256);
+        n = read(sockfd, buffer, 255);
+        if (n < 0) {
+            perror("Error reading from socket");
+            return 6;
+        }
+
+        printf("%s\n",buffer);
+        if(!strcmp(buffer, "terminujem ta")){
+            printf("reeeeeeeeeeeeeeeee\n");
+            break;
+        }
+
+        printf("sprava ktora prisla: %s\n",buffer);
+
+        char* command;
+        command = strtok(buffer, " ");
+        printf("command: %s\n", command);
+        if(!strcmp(command, "s")){
+            printf("dekodovanie: \n");
+
+            char* odkial;
+            char text[201];
+            odkial = strtok(NULL, " ");
+            char * token = strtok(NULL, " ");
+            bzero(text,201);
+
+            while(token != NULL){
+                strcat(text, token);
+                strcat(text, " ");
+                token = strtok(NULL, " ");
+            }
+            text[strlen(text)-1] = 0;
             if((strlen(text)-1) % 2 == 0){
                 for(int i=0; i<strlen(text)-1; i+=2){
                     char c = text[i];
@@ -98,6 +187,7 @@ void *mWrite(int sockfd){
                     text[i+1] = c;
                 }
             }
+            int shift = 0;
             for(int i=0; i < strlen(text)-1; i++) {
                 shift = i % 4;
                 text[i] -= shift;
@@ -110,43 +200,14 @@ void *mWrite(int sockfd){
             bzero(decrypted,300);
             strcat(decrypted, command);
             strcat(decrypted, " ");
-            strcat(decrypted, komu);
+            strcat(decrypted, odkial);
             strcat(decrypted, " ");
             strcat(decrypted, text);
-            printf("original: %s", buffer);
-            printf("    copy: %s\n", decrypted);
-        }
+            printf("%s\n", decrypted);
 
-        //dealokacia
-        free(dup);
-
-        n = write(sockfd, buffer, strlen(buffer)+1);
-        if (n < 0) {
-            perror("Error writing to socket");
-            return 5;
-        }
-        if(!strcmp(buffer, "quit\n")){
-            break;
-        }
-    }
-}
-
-void *mRead(int sockfd){
-    int n;
-    char buffer[256];
-
-    while(1){
-        bzero(buffer,256);
-        n = read(sockfd, buffer, 255);
-        if (n < 0)
-        {
-            perror("Error reading from socket");
-            return 6;
-        }
-        printf("%s\n",buffer);
-        if(!strcmp(buffer, "terminujem ta")){
-            printf("reeeeeeeeeeeeeeeee\n");
-            break;
+        }else {
+            printf("nesifrovana sprava:\n");
+            printf("%s\n",buffer);
         }
     }
 }
