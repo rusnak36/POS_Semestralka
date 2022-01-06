@@ -17,11 +17,111 @@ void *mWrite(int sockfd){
     while(1){
         bzero(buffer,256);
         fgets(buffer, 255, stdin);
-        printf("vypis obsahu buffera z write thready: %s\n",buffer);
+        printf("\n");
+        printf("vypis obsahu buffera z write thready: %s",buffer);
+        printf("pocet znakov(aj s koncovym bielim znakom): %d\n",(int)strlen(buffer));
+
+        char *dup = strdup(buffer);
+        char* command;
+        command = strtok(dup, " ");
+        if(!strcmp(command, "msgC")){
+            printf("je to msgC\n");
+            char* komu;
+            char text[201];
+
+            komu = strtok(NULL, " ");
+            printf("komu: %s\n",komu);
+
+            char * token = strtok(NULL, " ");
+            printf("token: %s\n", token);
+            bzero(text,201);
+
+            while(token != NULL){
+                strcat(text, token);
+                strcat(text, " ");
+                token = strtok(NULL, " ");
+
+                printf("token: %s\n", token);
+            }
+            text[strlen(text)-1] = 0;
+            printf("text: %s\n", text);
+            printf("text dlzka(aj s novym riadkom nakonci): %d\n", (int)strlen(text));
+
+            //cezar
+            for(int i=0; i < strlen(text)-1; i++) {
+                text[i] += 1;
+            }
+            //shift podla pozicie
+            int shift = 0;
+            for(int i=0; i < strlen(text)-1; i++) {
+                shift = i % 4;
+                text[i] += shift;
+            }
+            //vymen znaky vedla seba
+
+            if((strlen(text)-1) % 2 == 0){
+                for(int i=0; i<strlen(text)-1; i+=2){
+                    char c = text[i];
+                    text[i] = text[i+1];
+                    text[i+1] = c;
+                }
+            }else{
+                for(int i=0; i<strlen(text)-2; i+=2){
+                    char c = text[i];
+                    text[i] = text[i+1];
+                    text[i+1] = c;
+                }
+            }
+
+
+            char* crypted[300];
+            bzero(crypted,300);
+            strcat(crypted, command);
+            strcat(crypted, " ");
+            strcat(crypted, komu);
+            strcat(crypted, " ");
+            strcat(crypted, text);
+            printf("original: %s", buffer);
+            printf("    copy: %s\n", crypted);
+
+            //reverse
+            if((strlen(text)-1) % 2 == 0){
+                for(int i=0; i<strlen(text)-1; i+=2){
+                    char c = text[i];
+                    text[i] = text[i+1];
+                    text[i+1] = c;
+                }
+            }else{
+                for(int i=0; i<strlen(text)-2; i+=2){
+                    char c = text[i];
+                    text[i] = text[i+1];
+                    text[i+1] = c;
+                }
+            }
+            for(int i=0; i < strlen(text)-1; i++) {
+                shift = i % 4;
+                text[i] -= shift;
+            }
+            for(int i=0; i < strlen(text)-1; i++){
+                text[i] -= 1;
+            }
+
+            char* decrypted[300];
+            bzero(decrypted,300);
+            strcat(decrypted, command);
+            strcat(decrypted, " ");
+            strcat(decrypted, komu);
+            strcat(decrypted, " ");
+            strcat(decrypted, text);
+            printf("original: %s", buffer);
+            printf("    copy: %s\n", decrypted);
+        }
+
+        //dealokacia
+        free(dup);
 
         n = write(sockfd, buffer, strlen(buffer)+1);
-        if (n < 0)
-        {
+        if (n < 0) {
             perror("Error writing to socket");
             return 5;
         }
