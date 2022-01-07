@@ -92,8 +92,8 @@ void *generate(void *d){
             printf("snazim sa lognut uzivatela!!!!!!!!!!!!!\n");
             //checkni txt ci tam existuje
             FILE *fptr;
-            //fptr = fopen("/home/hubocan9/userData.txt","r");
-            fptr = fopen("/home/rusnak36/userData.txt", "r");
+            fptr = fopen("/home/hubocan9/userData.txt","r");
+            //fptr = fopen("/home/rusnak36/userData.txt", "r");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit\n");
                 break;
@@ -116,7 +116,22 @@ void *generate(void *d){
                     }
                 }
             }
-            //todo nacitat priatelov so suboru
+            fclose(fptr);
+
+            int fnum=0;
+            char* tfriend;
+            fptr = fopen("/home/hubocan9/friendData.txt","r");
+
+            while (fgets(line, sizeof(line), fptr)) {
+                tname = strtok(line, " ");
+                if(tname == name){
+                    fnum = atoi(strtok(NULL, " "));
+                    for(int i=0; i < fnum; i++){
+                        tfriend = strtok(NULL, " ");
+                        client->friends[i].name = tfriend;
+                    }
+                }
+            }
             fclose(fptr);
 
             //logniho alebo ho posli dopice
@@ -144,8 +159,8 @@ void *generate(void *d){
             printf("snazim sa registrovat uzivatela!!!!!!!!!!!!!\n");
             //checkni txt ci tam existuje
             FILE *fptr;
-            //fptr = fopen("/home/hubocan9/userData.txt","r");
-            fptr = fopen("/home/rusnak36/userData.txt", "r");
+            fptr = fopen("/home/hubocan9/userData.txt","r");
+            //fptr = fopen("/home/rusnak36/userData.txt", "r");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor.\n");
                 break;
@@ -179,9 +194,14 @@ void *generate(void *d){
             if (jeVsubore) {
                 n = write(client->newsockfd, "Meno je obsadene.", 18); //mozno ojeb o jednotku
             } else {
-                //fptr = fopen("/home/hubocan9/userData.txt","a");
-                fptr = fopen("/home/rusnak36/userData.txt", "a");
+                fptr = fopen("/home/hubocan9/userData.txt","a");
+                //fptr = fopen("/home/rusnak36/userData.txt", "a");
                 fprintf(fptr, tmp);
+                fclose(fptr);
+
+                fptr = fopen("/home/hubocan9/friendData.txt","a");
+                fprintf(fptr, name);
+                fprintf(fptr, " 0 \n");
                 fclose(fptr);
                 n = write(client->newsockfd, "Boli ste uspesne registrovany.", 32); //mozno ojeb o jednotku
                 if (n < 0) {
@@ -225,8 +245,8 @@ void *generate(void *d){
             printf("S obsahom: %s\n", text);
 
             FILE *fptr;
-            //fptr = fopen("/home/hubocan9/msgLog.txt","a");
-            fptr = fopen("/home/rusnak36/msgLog.txt", "a");
+            fptr = fopen("/home/hubocan9/msgLog.txt","a");
+            //fptr = fopen("/home/rusnak36/msgLog.txt", "a");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor.\n");
                 break;
@@ -304,8 +324,8 @@ void *generate(void *d){
             printf("S obsahom: %s\n", text);
 
             FILE *fptr;
-            //fptr = fopen("/home/hubocan9/msgLog.txt","a");
-            fptr = fopen("/home/rusnak36/msgLog.txt", "a");
+            fptr = fopen("/home/hubocan9/msgLog.txt","a");
+            //fptr = fopen("/home/rusnak36/msgLog.txt", "a");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor.\n");
                 break;
@@ -366,6 +386,7 @@ void *generate(void *d){
                 exit(5);
             }
         } else if (!strcmp(command, "add")) {
+            //todo checkni ci uz nahodou neni jeho friend predtym ako posles ziadost o nove priatelstvo
             user = strtok(NULL, " ");
             user[strlen(user) - 1] = 0;
             int x = 0;
@@ -403,20 +424,39 @@ void *generate(void *d){
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
-
                 }
                 continue;
             }
+            //todo fucking file to file line altering BS
+            FILE* fptr;
+            FILE* fakefptr;
+            char* line[300];
+            bzero(line, 300);
+            char* tname = "";
+            int fnum=0;
+            char* tfriend;
+            char *dup;
+            fptr = fopen("/home/hubocan9/friendData.txt","r");
 
-            for (int i = 0; i < 50; i++) {//treba zvysit pocet na max kapacitu friendlistu NIE PAT
+            while (fgets(line, sizeof(line), fptr)) {
+                dup = strdup(line);
+                tname = strtok(line, " ");
+                if(tname == client->name){
+                    fnum = atoi(strtok(NULL, " "));
+                    for(int i=0; i < fnum; i++){
+                        tfriend = strtok(NULL, " ");
+                        client->friends[i].name = tfriend;
+                    }
+                }
+            }
+            fclose(fptr);
 
+            for (int i = 0; i < 50; i++) {
                 char * asshole;
                 asshole = "*";
                 if(!strcmp((client->friends[i].name), asshole)){
                     client->friends[i] = *client->request;
-
-                    for(int j = 0; j < 50; j++){//treba zvysit pocet na max kapacitu friendlistu NIE PAT
-
+                    for(int j = 0; j < 50; j++){
                         if(!strcmp(data->client[client->request->newsockfd].friends[j].name, "*")){
                             data->client[client->request->newsockfd].friends[j] = *client;
                             break;
