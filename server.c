@@ -117,7 +117,22 @@ void *generate(void *d){
                     }
                 }
             }
-            //todo nacitat priatelov so suboru
+            fclose(fptr);
+
+            int fnum=0;
+            char* tfriend;
+            fptr = fopen("/home/hubocan9/friendData.txt","r");
+
+            while (fgets(line, sizeof(line), fptr)) {
+                tname = strtok(line, " ");
+                if(tname == name){
+                    fnum = atoi(strtok(NULL, " "));
+                    for(int i=0; i < fnum; i++){
+                        tfriend = strtok(NULL, " ");
+                        client->friends[i].name = tfriend;
+                    }
+                }
+            }
             fclose(fptr);
 
             //logniho alebo ho posli dopice
@@ -186,6 +201,13 @@ void *generate(void *d){
                 fptr = fopen("/home/pos/userData.txt", "a");
                 fprintf(fptr, tmp);
                 fclose(fptr);
+
+                fptr = fopen("/home/pos/friendData.txt","a");
+                fprintf(fptr, name);
+                //fprintf(fptr, " 0 \n");
+
+                fclose(fptr);
+
                 n = write(client->newsockfd, "Boli ste uspesne registrovany.", 32); //mozno ojeb o jednotku
                 if (n < 0) {
                     perror("Error writing to socket");
@@ -323,6 +345,7 @@ void *generate(void *d){
             strcat(fetak, user);
             strcat(fetak, " ");
             strcat(fetak, text);
+
             printf("line2: %s", fetak);
             fprintf(fptr, fetak);
             fclose(fptr);
@@ -371,6 +394,7 @@ void *generate(void *d){
                 exit(5);
             }
         } else if (!strcmp(command, "add")) {
+            //todo checkni ci uz nahodou neni jeho friend predtym ako posles ziadost o nove priatelstvo
             user = strtok(NULL, " ");
             user[strlen(user) - 1] = 0;
             int x = 0;
@@ -399,7 +423,6 @@ void *generate(void *d){
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
-
                 }
             }
         } else if (!strcmp(command, "accept")) {
@@ -412,9 +435,31 @@ void *generate(void *d){
                 }
                 continue;
             }
+            //todo fucking file to file line altering BS
+            FILE* fptr;
+            FILE* fakefptr;
+            char* line[300];
+            bzero(line, 300);
+            char* tname = "";
+            int fnum=0;
+            char* tfriend;
+            char *dup;
+            fptr = fopen("/home/hubocan9/friendData.txt","r");
 
-            for (int i = 0; i < 50; i++) {//treba zvysit pocet na max kapacitu friendlistu NIE PAT
+            while (fgets(line, sizeof(line), fptr)) {
+                dup = strdup(line);
+                tname = strtok(line, " ");
+                if(tname == client->name){
+                    fnum = atoi(strtok(NULL, " "));
+                    for(int i=0; i < fnum; i++){
+                        tfriend = strtok(NULL, " ");
+                        client->friends[i].name = tfriend;
+                    }
+                }
+            }
+            fclose(fptr);
 
+            for (int i = 0; i < 50; i++) {
                 char * asshole;
                 asshole = "*";
                 if(!strcmp((client->friends[i].name), asshole)){
