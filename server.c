@@ -479,6 +479,8 @@ void *generate(void *d){
             char text[300];
             bzero(text, 300);
             char* word = "";
+            char final[300];
+            bzero(final, 300);
 
             word = strtok(NULL, " ");
             strcat(text, word);
@@ -494,6 +496,13 @@ void *generate(void *d){
             printf("skupina: %s",groupToMSG);
             printf("TEXT: %s",text);
 
+            strcat(final, "msgg ");
+            strcat(final, groupToMSG);
+            strcat(final, " ");
+            strcat(final, client->name);
+            strcat(final, " ");
+            strcat(final, text);
+
             while (fgets(line, sizeof(line), fptr)) {
                 groupName = strtok(line, " ");
                 if(!strcmp(groupName, groupToMSG)) {
@@ -503,11 +512,32 @@ void *generate(void *d){
 
                     for(int i = 0; i < pocet; i++) {
                         temp = strtok(NULL, " ");
+                        if(i+1 == pocet) {
+                            temp[strlen(temp) - 1] = 0;
+                        }
+                        for (int j = 0; j < data->size; j++) {
+                            if(!strcmp(data->client[j].name, temp)) {
+                                if(strcmp(temp, client->name)) {
+                                    n = write(data->client[j].newsockfd, final, strlen(final));
+                                    if (n < 0) {
+                                        perror("Error writing to socket");
+                                        exit(5);
+                                    }
+                                }
+                                break;
+                            }
+                        }
                         printf("User: %s\n", temp);
                     }
                 }
             }
             fclose(fptr);
+
+            FILE *fptr2;
+            fptr2 = fopen("/home/pos/groupLog.txt", "a");
+            final[strlen(final) - 1] = 0;
+            fprintf(fptr2, final);
+            fclose(fptr2);
         }
     }
 }
