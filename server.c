@@ -93,7 +93,8 @@ void *generate(void *d){
             //checkni txt ci tam existuje
             FILE *fptr;
             //fptr = fopen("/home/hubocan9/userData.txt","r");
-            fptr = fopen("/home/rusnak36/userData.txt", "r");
+            //fptr = fopen("/home/rusnak36/userData.txt", "r");
+            fptr = fopen("/home/pos/userData.txt", "r");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit\n");
                 break;
@@ -145,7 +146,8 @@ void *generate(void *d){
             //checkni txt ci tam existuje
             FILE *fptr;
             //fptr = fopen("/home/hubocan9/userData.txt","r");
-            fptr = fopen("/home/rusnak36/userData.txt", "r");
+            //fptr = fopen("/home/rusnak36/userData.txt", "r");
+            fptr = fopen("/home/pos/userData.txt", "r");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor.\n");
                 break;
@@ -180,7 +182,8 @@ void *generate(void *d){
                 n = write(client->newsockfd, "Meno je obsadene.", 18); //mozno ojeb o jednotku
             } else {
                 //fptr = fopen("/home/hubocan9/userData.txt","a");
-                fptr = fopen("/home/rusnak36/userData.txt", "a");
+                //fptr = fopen("/home/rusnak36/userData.txt", "a");
+                fptr = fopen("/home/pos/userData.txt", "a");
                 fprintf(fptr, tmp);
                 fclose(fptr);
                 n = write(client->newsockfd, "Boli ste uspesne registrovany.", 32); //mozno ojeb o jednotku
@@ -226,7 +229,8 @@ void *generate(void *d){
 
             FILE *fptr;
             //fptr = fopen("/home/hubocan9/msgLog.txt","a");
-            fptr = fopen("/home/rusnak36/msgLog.txt", "a");
+            //fptr = fopen("/home/rusnak36/msgLog.txt", "a");
+            fptr = fopen("/home/pos/msgLog.txt", "a");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor.\n");
                 break;
@@ -305,7 +309,8 @@ void *generate(void *d){
 
             FILE *fptr;
             //fptr = fopen("/home/hubocan9/msgLog.txt","a");
-            fptr = fopen("/home/rusnak36/msgLog.txt", "a");
+            //fptr = fopen("/home/rusnak36/msgLog.txt", "a");
+            fptr = fopen("/home/pos/msgLog.txt", "a");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor.\n");
                 break;
@@ -427,6 +432,45 @@ void *generate(void *d){
             }
             //todo pridat do suboru zaznam o priatelstve
             client->request = NULL;
+        }  else if (!strcmp(command, "createGroup")) {
+            char* groupName = strtok(NULL, " ");
+            char* pocet = strtok(NULL, " ");
+            char* user = "";
+            char temp[300];
+            bzero(temp, 300);
+            FILE *fptr;
+            char final[300];
+            bzero(final, 300);
+
+            printf("%d\n", pocet);
+            user = strtok(NULL, " ");
+            int x = atoi(pocet);
+            for(int i = 0; i < x; i++) {
+
+                strcat(temp, user);
+
+                if(i+1 == pocet) {
+                    user[strlen(user) - 1] = 0;
+                } else {
+                    strcat(temp, " ");
+                }
+
+                user = strtok(NULL, " ");
+            }
+            fptr = fopen("/home/pos/groupData.txt", "a");
+            strcat(final, groupName);
+            strcat(final, " ");
+            strcat(final, pocet);
+            strcat(final, " ");
+
+            strcat(final, temp);
+            final[strlen(final) - 1] = 0;
+            fprintf(fptr, final);
+            fclose(fptr);
+            printf("Nazov skupiny: %s\n", groupName);
+            printf("Pocet clenov: %s\n", pocet);
+            printf("Zoznam clenov: %s\n", temp);
+
         }
     }
 }
