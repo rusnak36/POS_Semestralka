@@ -48,7 +48,7 @@ void *generate(void *d){
     char buffer[256];
 
     while(1) {
-
+        bzero(buffer, 256);
         if (client->newsockfd < 0) {
             perror("ERROR on accept");
             exit(3);
@@ -467,10 +467,47 @@ void *generate(void *d){
             final[strlen(final) - 1] = 0;
             fprintf(fptr, final);
             fclose(fptr);
-            printf("Nazov skupiny: %s\n", groupName);
-            printf("Pocet clenov: %s\n", pocet);
-            printf("Zoznam clenov: %s\n", temp);
+        } else if (!strcmp(command, "msgg")) {
+            FILE *fptr;
+            fptr = fopen("/home/pos/groupData.txt", "r");
+            char line[256];
+            char* groupName = "";
+            int pocet = 0;
+            char* temp = "";
+            char* groupToMSG = "";
+            groupToMSG = strtok(NULL, " ");
+            char text[300];
+            bzero(text, 300);
+            char* word = "";
 
+            word = strtok(NULL, " ");
+            strcat(text, word);
+            while(1) {
+                strcat(text, " ");
+                word = strtok(NULL, " ");
+                if(word == NULL) {
+                    break;
+                }
+                strcat(text, word);
+            }
+
+            printf("skupina: %s",groupToMSG);
+            printf("TEXT: %s",text);
+
+            while (fgets(line, sizeof(line), fptr)) {
+                groupName = strtok(line, " ");
+                if(!strcmp(groupName, groupToMSG)) {
+                    printf("groupName: %s\n", groupName);
+                    pocet = atoi(strtok(NULL, " "));
+                    printf("Pocet uzivatelov: %d\n", pocet);
+
+                    for(int i = 0; i < pocet; i++) {
+                        temp = strtok(NULL, " ");
+                        printf("User: %s\n", temp);
+                    }
+                }
+            }
+            fclose(fptr);
         }
     }
 }

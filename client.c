@@ -195,6 +195,7 @@ void *mRead(int sockfd){
             }
             text[strlen(text)-1] = 0;
             char final[300];
+            bzero(final, 300);
             strcat(final,odkial);
             strcat(final," ");
             strcat(final,text);
