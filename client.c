@@ -74,7 +74,7 @@ void *mWrite(int sockfd){
             }
 
 
-            char crypted[300];
+            char* crypted[300];
             bzero(crypted,300);
             strcat(crypted, command);
             strcat(crypted, " ");
@@ -221,10 +221,9 @@ void *mRead(int sockfd){
             printf("%s si ta chce pridat ako priatela!\n",newfriend);
         } else if(!strcmp(command, "noFriendsForYou")){
             printf("%s tvoj friend request odmietol!\n", strtok(NULL, " "));
-
         }
-
     }
+    bzero(buffer,256);
 }
 
 int main(int argc, char *argv[])
@@ -382,7 +381,6 @@ int main(int argc, char *argv[])
         printf("result: %d\n",result);
 
         if(!strcmp(buffer, "Boli ste uspesne registrovany.")){ // spravne udaje
-
             pthread_t tRead;
             pthread_t tWrite;
 
@@ -395,6 +393,7 @@ int main(int argc, char *argv[])
             printf("boha jeho treba novy nick!");
         }
     }
+    bzero(buffer, 256);
     close(sockfd);
     return 0;
 }
