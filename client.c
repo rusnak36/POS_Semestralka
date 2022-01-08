@@ -74,7 +74,7 @@ void *mWrite(int sockfd){
             }
 
 
-            char* crypted[300];
+            char crypted[300];
             bzero(crypted,300);
             strcat(crypted, command);
             strcat(crypted, " ");
@@ -96,6 +96,7 @@ void *mWrite(int sockfd){
                 return 5;
             }
             if(!strcmp(buffer, "quit\n")){
+                free(dup);
                 break;
             }
 
@@ -233,6 +234,7 @@ int main(int argc, char *argv[])
     struct hostent* server;
 
     char buffer[256];
+    free(buffer);
 
     if (argc < 3)
     {
