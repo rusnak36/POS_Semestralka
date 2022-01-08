@@ -90,6 +90,8 @@ void *generate(void *d){
             command = "decline";
         } else if (!strcmp(buffer, "accept\n")) {
             command = "accept";
+        } else if (!strcmp(buffer, "history\n")) {
+            command = "history";
         } else {
             printf("nie jednoslovny command \n");
             command = strtok(buffer, " ");
@@ -248,6 +250,7 @@ void *generate(void *d){
             char *token = strtok(NULL, " ");
             printf("token: %s\n", token);
             bzero(text, 201);
+            bool jeOnline = false;
 
             while (token != NULL) {
                 strcat(text, token);
@@ -272,17 +275,6 @@ void *generate(void *d){
                 printf("Error! neviem otvorit subor.\n");
                 break;
             }
-            char *fetak[300];
-            bzero(fetak, 300);
-            strcat(fetak, "n ");
-            strcat(fetak, client->name);
-            strcat(fetak, " ");
-            strcat(fetak, name);
-            strcat(fetak, " ");
-            strcat(fetak, text);
-            printf("line2: %s", fetak);
-            fprintf(fptr, fetak);
-            fclose(fptr);
 
             char tmp[256];
             bzero(tmp, 256);
@@ -296,18 +288,49 @@ void *generate(void *d){
 
             // x je cislo na ktory socket treba poslat spravu
             // na zaciatku je nastaveny samemu sebe
-            int x = client->newsockfd;
+            int x = 0;
             for (int i = 4; i < data->size; i++) {
                 if (!strcmp(data->client[i].name, user)) {
                     x = data->client[i].newsockfd;
+                    jeOnline = true;
                     break;
                 }
             }
-            n = write(x, tmp, strlen(tmp));// +1 za
-            if (n < 0) {
-                perror("Error writing to socket");
-                exit(5);
+
+            if(x == 0) {
+                char* temp = "msg Tento uzivatel momentalne nieje online, precita si vasu spravu neskor";
+
+                n = write(client->newsockfd, temp, strlen(temp));
+                if (n < 0) {
+                    perror("Error writing to socket");
+                    exit(5);
+                }
+            } else {
+                n = write(x, tmp, strlen(tmp));
+                if (n < 0) {
+                    perror("Error writing to socket");
+                    exit(5);
+                }
             }
+
+            char *fetak[300];
+            bzero(fetak, 300);
+
+            if(jeOnline){
+                strcat(fetak, "online ");
+            } else {
+                strcat(fetak, "offline ");
+            }
+            strcat(fetak, "n ");
+            strcat(fetak, client->name);
+            strcat(fetak, " ");
+            strcat(fetak, name);
+            strcat(fetak, " ");
+            strcat(fetak, text);
+            printf("line2: %s", fetak);
+            fprintf(fptr, fetak);
+            fclose(fptr);
+
         } else if (!strcmp(command, "quit")) {
             printf("idem quitnut usera: %s\n", client->name);
 
@@ -936,6 +959,58 @@ void *generate(void *d){
             final[strlen(final) - 1] = 0;
             fprintf(fptr2, final);
             fclose(fptr2);
+        } else if (!strcmp(command, "history")) {
+            char line[300];
+            FILE *fptr;
+            fptr = fopen("/home/pos/msgLog.txt", "r");
+            if (fptr == NULL) {
+                printf("Error! neviem otvorit subor.\n");
+                break;
+            }
+            char* stav = "";
+            char* sifra = "";
+            char* odosielatel = "";
+            char* prijemca = "";
+            char sprava[300];
+            char final[300];
+
+            while (fgets(line, sizeof(line), fptr)) {
+                bzero(sprava, 300);
+                bzero(final, 300);
+                stav = strtok(line, " ");
+                sifra = strtok(NULL, " ");
+                odosielatel = strtok(NULL, " ");
+                prijemca = strtok(NULL, " ");
+                while(1) {
+                    char* temp = "";
+                    temp = strtok(NULL, " ");
+                    if(temp == NULL) {
+                        sprava[strlen(sprava) - 1] = 0;
+                        break;
+                    } else {
+                        strcat(sprava, temp);
+                        strcat(sprava, " ");
+                    }
+                }
+
+                if(!strcmp(prijemca, client->name)) {
+
+                    strcat(final, sifra);
+                    strcat(final, " ");
+                    strcat(final, odosielatel);
+                    strcat(final, ": ");
+                    strcat(final, sprava);
+
+                    n = write(client->newsockfd, final, strlen(final));
+                    if (n < 0) {
+                        perror("Error writing to socket");
+                        exit(5);
+                    }
+
+                    sleep(1);
+                }
+            }
+            fclose(fptr);
         }
     }
 }
@@ -1019,8 +1094,6 @@ int main(int argc, char *argv[])
     data.size=100;
     data.client = client;
     data.mutex = &mutex;
-
-
 
     pthread_create(&printer, NULL, print, &data);
 
