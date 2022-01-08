@@ -462,6 +462,10 @@ void *generate(void *d){
 
 
             badFriend = strtok(NULL, " ");
+
+            if(badFriend[strlen(badFriend) - 1] == '\n') {
+                badFriend[strlen(badFriend) - 1] = 0;
+            }
             printf("badFriend: %s\n",badFriend);
             FILE* fptr;
             FILE* fakefptr;
@@ -505,19 +509,36 @@ void *generate(void *d){
                         for(int i=0; i < pocetFriendovAkceptujuci ;i++){
                             char* najnovsi = "";
                             if(i == pocetFriendovAkceptujuci-1){
+
+
                                 najnovsi = strtok(NULL, " ");
+                                if(najnovsi == NULL) {
+                                    break;
+                                }
+                                if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+                                    najnovsi[strlen(najnovsi) - 1] = 0;
+                                }
                                 if(!strcmp(najnovsi, badFriend)){
 
                                 }else{
-                                    strcat(priatelia, strtok(NULL, " "));
-                                    priatelia[strlen(priatelia)-1] = 0;
+                                    if(najnovsi == NULL) {
+                                        break;
+                                    }
+                                    if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+                                        najnovsi[strlen(najnovsi) - 1] = 0;
+                                    }
+                                    strcat(priatelia, najnovsi);
+                                    //priatelia[strlen(priatelia)-1] = 0;
                                 }
                             }else{
                                 najnovsi = strtok(NULL, " ");
                                 if(!strcmp(najnovsi, badFriend)){
 
                                 } else{
-                                    strcat(priatelia, strtok(NULL, " "));
+                                    if(najnovsi == NULL) {
+                                        break;
+                                    }
+                                    strcat(priatelia, najnovsi);
                                     strcat(priatelia, " ");
                                 }
                             }
@@ -561,10 +582,16 @@ void *generate(void *d){
                             if(i == pocetFriendov-1){
 
                                 najnovsi = strtok(NULL, " ");
+                                if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+                                    najnovsi[strlen(najnovsi) - 1] = 0;
+                                }
                                 if(!strcmp(najnovsi, client->name)){
 
                                 }else{
-                                    strcat(priatelia, strtok(NULL, " "));
+                                    if(najnovsi == NULL) {
+                                        break;
+                                    }
+                                    strcat(priatelia, najnovsi);
                                     priatelia[strlen(priatelia)-1] = 0;
                                 }
                             }else{
@@ -572,7 +599,13 @@ void *generate(void *d){
                                 if(!strcmp(najnovsi, client->name)){
 
                                 } else{
-                                    strcat(priatelia, strtok(NULL, " "));
+                                    if(najnovsi == NULL) {
+                                        break;
+                                    }
+                                    if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+                                        najnovsi[strlen(najnovsi) - 1] = 0;
+                                    }
+                                    strcat(priatelia, najnovsi);
                                     strcat(priatelia, " ");
                                 }
                             }
