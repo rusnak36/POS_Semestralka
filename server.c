@@ -15,6 +15,7 @@ typedef struct client{
     struct client* friends;
     int numF;
     struct client* request;
+    bool nastaloMazanie;
 } Client;
 
 typedef struct data{
@@ -43,11 +44,17 @@ void *generate(void *d){
         client->friends[i].name = "*";
     }
 
-
+    client->nastaloMazanie = false;
     int n;
     char buffer[256];
 
     while(1) {
+        if(client->nastaloMazanie){
+            Client autobus;
+            client->friends[50] = autobus;
+        }
+        client->nastaloMazanie =false;
+
         bzero(buffer, 256);
         if (client->newsockfd < 0) {
             perror("ERROR on accept");
@@ -65,6 +72,7 @@ void *generate(void *d){
             printf("Preventol som kokotinu!!!\n");
             sleep(3);
             continue;
+
         }
 
         char *msg = buffer;
@@ -78,6 +86,8 @@ void *generate(void *d){
             command = "quit";
         } else if (!strcmp(buffer, "show\n")) {
             command = "show";
+        } else if(!strcmp(buffer, "decline\n")){
+            command = "decline";
         } else if (!strcmp(buffer, "accept\n")) {
             command = "accept";
         } else {
@@ -99,6 +109,7 @@ void *generate(void *d){
                 printf("Error! neviem otvorit\n");
                 break;
             }
+            printf("KURA\n");
             char line[256];
             bool jeVsubore = false;
 
@@ -117,11 +128,16 @@ void *generate(void *d){
                     }
                 }
             }
+            printf("KURA2\n");
             fclose(fptr);
 
             int fnum=0;
             char* tfriend;
-            fptr = fopen("/home/hubocan9/friendData.txt","r");
+            fptr = fopen("/home/pos/friendData.txt","r");
+            if (!fptr) {
+                printf("Unable to open the original friendData file!!\n");
+                return 0;
+            }
 
             while (fgets(line, sizeof(line), fptr)) {
                 tname = strtok(line, " ");
@@ -143,7 +159,6 @@ void *generate(void *d){
             } else {
                 n = write(client->newsockfd, "nok", 4);
             }
-
             if (n < 0) {
                 perror("Error writing to socket");
                 exit(5);
@@ -202,10 +217,10 @@ void *generate(void *d){
                 fprintf(fptr, tmp);
                 fclose(fptr);
 
+
                 fptr = fopen("/home/pos/friendData.txt","a");
                 fprintf(fptr, name);
-                //fprintf(fptr, " 0 \n");
-
+                fprintf(fptr, " 0 \n");// potencionalne odstranit koncovy znak novy riadok!!!
                 fclose(fptr);
 
                 n = write(client->newsockfd, "Boli ste uspesne registrovany.", 32); //mozno ojeb o jednotku
@@ -425,6 +440,220 @@ void *generate(void *d){
                     exit(5);
                 }
             }
+        } else if(!strcmp(command, "decline")){
+            char str[300];
+            bzero(str,300);
+            strcat(str, "noFriendsForYou");
+            strcat(str, " ");
+            strcat(str, client->name);
+            n = write(client->newsockfd, str, strlen(str));
+            if (n < 0) {
+                perror("Error writing to socket");
+                exit(5);
+            }
+            client->request = NULL;
+
+        }else if (!strcmp(command, "unfriend")) {
+            //todo milan sem treba zabezpecit ze ak je typek offline tak aby mu prisla info msg ze ho uz ludia nemaju radi
+
+            printf("1\n");
+            //todo fucking file to file line altering BS
+            char* badFriend = "";
+
+
+            badFriend = strtok(NULL, " ");
+            printf("badFriend: %s\n",badFriend);
+            FILE* fptr;
+            FILE* fakefptr;
+            fptr = fopen("/home/pos/friendData.txt","r");
+            if (!fptr)
+            {
+                printf("Unable to open the original friendData file!!\n");
+                return 0;
+            }
+
+            fakefptr = fopen("/home/pos/tmp.txt", "w");
+
+
+            if (!fakefptr){
+                printf("Unable to open the tmp file!!\n");
+                return 0;
+            }
+
+            char line[300];
+            char* line2;
+            bzero(line, 300);
+
+            while(fgets(line, sizeof(line), fptr)){
+                printf("line : %s\n",line);
+                line2 = strdup(line);
+                char* tname = "";
+                tname = strtok(line, " ");
+                char priatelia[300];
+                bzero(priatelia, 300);
+
+
+
+                if(!strcmp(tname, client->name)){
+                    //nasiel riadok kde je typek ktory unfrienduje
+                    printf("riadok kde je typek ktory unfrienduje: %s", line2);
+                    int pocetFriendovAkceptujuci = atoi(strtok(NULL, " "));
+
+                    if(pocetFriendovAkceptujuci > 0) {
+                        strcat(priatelia, " ");
+
+                        for(int i=0; i < pocetFriendovAkceptujuci ;i++){
+                            char* najnovsi = "";
+                            if(i == pocetFriendovAkceptujuci-1){
+                                najnovsi = strtok(NULL, " ");
+                                if(!strcmp(najnovsi, badFriend)){
+
+                                }else{
+                                    strcat(priatelia, strtok(NULL, " "));
+                                    priatelia[strlen(priatelia)-1] = 0;
+                                }
+                            }else{
+                                najnovsi = strtok(NULL, " ");
+                                if(!strcmp(najnovsi, badFriend)){
+
+                                } else{
+                                    strcat(priatelia, strtok(NULL, " "));
+                                    strcat(priatelia, " ");
+                                }
+                            }
+                        }
+                    }else{
+                        n = write(client->newsockfd, "Nemas ziadnych kamaratov\n", 20);
+                        if (n < 0) {
+                            perror("Error writing to socket");
+                            exit(5);
+                        }
+                        continue;
+                    }
+
+
+
+                    char cislo[10];
+                    bzero(cislo,10);
+                    char totmp[500];
+                    bzero(totmp, 500);
+                    strcat(totmp, tname);
+                    strcat(totmp, " ");
+                    sprintf(cislo, "%d", pocetFriendovAkceptujuci-1);
+                    strcat(totmp, cislo);
+                    strcat(totmp, priatelia);
+                    strcat(totmp, "\n");//potencionalne zbytocne
+
+
+                    fprintf(fakefptr, totmp);
+
+
+                }else if(!strcmp(tname, badFriend)){
+                    //nasiel riadok cloveka ktory je mazany
+                    printf("riadok kde je typek ktory je mazany: %s", line2);
+                    int pocetFriendov = atoi(strtok(NULL, " "));
+
+                    if(pocetFriendov > 0) {
+                        strcat(priatelia, " ");
+
+                        for(int i=0; i < pocetFriendov ;i++){
+                            char* najnovsi = "";
+                            if(i == pocetFriendov-1){
+
+                                najnovsi = strtok(NULL, " ");
+                                if(!strcmp(najnovsi, client->name)){
+
+                                }else{
+                                    strcat(priatelia, strtok(NULL, " "));
+                                    priatelia[strlen(priatelia)-1] = 0;
+                                }
+                            }else{
+                                najnovsi = strtok(NULL, " ");
+                                if(!strcmp(najnovsi, client->name)){
+
+                                } else{
+                                    strcat(priatelia, strtok(NULL, " "));
+                                    strcat(priatelia, " ");
+                                }
+                            }
+                        }
+                    }else{
+                        continue;
+                    }
+
+
+                    char cislo[10];
+                    bzero(cislo,10);
+                    char totmp[500];
+                    bzero(totmp, 500);
+                    strcat(totmp, tname);
+                    strcat(totmp, " ");
+                    sprintf(cislo, "%d", pocetFriendov-1);
+                    strcat(totmp, cislo);
+                    strcat(totmp, priatelia);
+                    strcat(totmp, "\n");//potencionalne zbytocne
+
+                    fprintf(fakefptr, totmp);
+                } else{
+                    fprintf(fakefptr, line2);
+                }
+            }
+            printf("2\n");
+            // v tomto bode mam napisane v tmp.txt riadky z originalu obohatene o noveho curaka a incrementnute mnozstvo
+
+
+            //koniec bs prepisu
+            fclose(fakefptr);
+            fclose(fptr);
+
+            if (remove("/home/pos/friendData.txt") == 0) {
+                printf("The file friendData is deleted successfully.\n");
+            } else {
+                printf("The file friendData.txt is not deleted.\n");
+
+            }
+            int resulttt = rename("/home/pos/tmp.txt", "/home/pos/friendData.txt");
+            if (resulttt == 0) {
+                printf("The file tmp.txt is renamed successfully to friendData.\n");
+            } else {
+                printf("The file tmp.txt could not be renamed.\n");
+            }
+            printf("3\n");
+
+            //dobre nastavene serverovy friendData.txt
+
+            bool posuvaj = false;
+            for(int i=0; i < 50; i++){
+                if(posuvaj){
+                    client->friends[i-1] = client->friends[i];
+                }
+                if(client->friends[i].name == badFriend){
+                    client->friends[i].name = "*";
+                    bool posuvaj = true;
+                }
+            }
+            client->nastaloMazanie = true;
+
+
+            Client* docasny;
+            for(int i = 0; i < data->size; i++){
+                if(!strcmp(data->client[i].name, badFriend)){
+                    docasny = data->client+i;
+                }
+            }
+            posuvaj = false;
+            for(int i=0; i < 50; i++){
+                if(posuvaj){
+                    docasny->friends[i-1] = docasny->friends[i];
+                }
+                if(docasny->friends[i].name == client->name){
+                    docasny->friends[i].name = "*";
+                    bool posuvaj = true;
+                }
+            }
+
+
+
         } else if (!strcmp(command, "accept")) {
             if(client->request == NULL) {
                 n = write(client->newsockfd, "Nie je koho pridat!\n", 20);
@@ -438,26 +667,118 @@ void *generate(void *d){
             //todo fucking file to file line altering BS
             FILE* fptr;
             FILE* fakefptr;
-            char* line[300];
-            bzero(line, 300);
-            char* tname = "";
-            int fnum=0;
-            char* tfriend;
-            char *dup;
-            fptr = fopen("/home/hubocan9/friendData.txt","r");
+            fptr = fopen("/home/pos/friendData.txt","r");
+            if (!fptr)
+            {
+                printf("Unable to open the original friendData file!!\n");
+                return 0;
+            }
 
-            while (fgets(line, sizeof(line), fptr)) {
-                dup = strdup(line);
+            fakefptr = fopen("/home/pos/tmp.txt", "w");
+
+
+            if (!fakefptr){
+                printf("Unable to open the tmp file!!\n");
+                return 0;
+            }
+
+            char line[300];
+            char* line2;
+            bzero(line, 300);
+
+            while(fgets(line, sizeof(line), fptr)){
+                printf("line : %s\n",line);
+                line2 = strdup(line);
+                char* tname = "";
                 tname = strtok(line, " ");
-                if(tname == client->name){
-                    fnum = atoi(strtok(NULL, " "));
-                    for(int i=0; i < fnum; i++){
-                        tfriend = strtok(NULL, " ");
-                        client->friends[i].name = tfriend;
+                char priatelia[300];
+                bzero(priatelia, 300);
+                if(!strcmp(tname, client->name)){
+                    //nasiel riadok kde je typek ktory akceptuje
+                    int pocetFriendovAkceptujuci = atoi(strtok(NULL, " "));
+
+                    if(pocetFriendovAkceptujuci > 0) {
+                        strcat(priatelia, " ");
+
+                        for(int i=0; i < pocetFriendovAkceptujuci ;i++){
+                            if(i == pocetFriendovAkceptujuci-1){
+                                strcat(priatelia, strtok(NULL, " "));
+                                priatelia[strlen(priatelia)-1] = 0;
+                            }else{
+                                strcat(priatelia, strtok(NULL, " "));
+                                strcat(priatelia, " ");
+                            }
+                        }
                     }
+                    char cislo[10];
+                    bzero(cislo,10);
+                    char totmp[500];
+                    bzero(totmp, 500);
+                    strcat(totmp, tname);
+                    strcat(totmp, " ");
+                    sprintf(cislo, "%d", pocetFriendovAkceptujuci+1);
+                    strcat(totmp, cislo);
+                    strcat(totmp, priatelia);
+                    strcat(totmp, " ");
+                    strcat(totmp, client->request->name);
+                    strcat(totmp, "\n");//potencionalne zbytocne
+
+                    fprintf(fakefptr, totmp);
+
+
+                }else if(!strcmp(tname, client->request->name)){
+                    //nasiel riadok kde je typek ktory ziada
+                    int pocetFriendovZiadajuci= atoi(strtok(NULL, " "));
+                    if(pocetFriendovZiadajuci > 0) {
+                        strcat(priatelia, " ");
+
+                        for(int i=0; i < pocetFriendovZiadajuci ;i++){
+                            if(i == pocetFriendovZiadajuci-1){
+                                strcat(priatelia, strtok(NULL, " "));
+                                priatelia[strlen(priatelia)-1] = 0;
+                            }else{
+                                strcat(priatelia, strtok(NULL, " "));
+                                strcat(priatelia, " ");
+                            }
+                        }
+                    }
+                    char cislo[10];
+                    bzero(cislo,10);
+                    char totmp[500];
+                    bzero(totmp, 500);
+                    strcat(totmp, tname);
+                    strcat(totmp, " ");
+                    sprintf(cislo, "%d", pocetFriendovZiadajuci+1);
+                    strcat(totmp, cislo);
+                    strcat(totmp, priatelia);
+                    strcat(totmp, " ");
+
+                    strcat(totmp, client->name);
+                    strcat(totmp, "\n");//potencionalne zbytocne
+                    fprintf(fakefptr, totmp);
+                } else{
+                    fprintf(fakefptr, line2);
                 }
             }
+            // v tomto bode mam napisane v tmp.txt riadky z originalu obohatene o noveho curaka a incrementnute mnozstvo
+
+
+            //koniec bs prepisu
+            fclose(fakefptr);
             fclose(fptr);
+
+            if (remove("/home/pos/friendData.txt") == 0) {
+                printf("The file friendData is deleted successfully.\n");
+            } else {
+                printf("The file friendData.txt is not deleted.\n");
+
+            }
+            int resulttt = rename("/home/pos/tmp.txt", "/home/pos/friendData.txt");
+            if (resulttt == 0) {
+                printf("The file tmp.txt is renamed successfully to friendData.\n");
+            } else {
+                printf("The file tmp.txt could not be renamed.\n");
+            }
 
             for (int i = 0; i < 50; i++) {
                 char * asshole;
@@ -475,7 +796,6 @@ void *generate(void *d){
                     break;
                 }
             }
-            //todo pridat do suboru zaznam o priatelstve
             client->request = NULL;
         }  else if (!strcmp(command, "createGroup")) {
             char* groupName = strtok(NULL, " ");

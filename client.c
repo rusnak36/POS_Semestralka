@@ -218,7 +218,11 @@ void *mRead(int sockfd){
             char* newfriend;
             newfriend = strtok(NULL, " ");
             printf("%s si ta chce pridat ako priatela!\n",newfriend);
+        } else if(!strcmp(command, "noFriendsForYou")){
+            printf("%s tvoj friend request odmietol!\n", strtok(NULL, " "));
+
         }
+
     }
 }
 
@@ -237,6 +241,7 @@ int main(int argc, char *argv[])
     }
 
     server = gethostbyname(argv[1]);
+
     if (server == NULL)
     {
         fprintf(stderr, "Error, no such host\n");
