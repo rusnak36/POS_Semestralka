@@ -363,22 +363,33 @@ void *messageHandler(void *d){
 
             char line[300];
             bzero(line, 300);
+
             while(fgets(line, sizeof(line), fptr)){
+
                 char* tname = "";
                 tname = strtok(line, " ");
+
                 if(!strcmp(tname, client->name)){
+
                     int pocetFriendovAkceptujuci = atoi(strtok(NULL, " "));
+
                     if(pocetFriendovAkceptujuci > 0) {
+
                         for(int i=0; i < pocetFriendovAkceptujuci ;i++){
+
                             char* najnovsi = "";
+
                             if(i == pocetFriendovAkceptujuci-1){
+
                                 najnovsi = strtok(NULL, " ");
                                 if(najnovsi == NULL) {
                                     break;
                                 }
+
                                 if(najnovsi[strlen(najnovsi) - 1] == '\n') {
                                     najnovsi[strlen(najnovsi) - 1] = 0;
                                 }
+
                                 if(!strcmp(najnovsi, user)){
                                     poslalUzivateloviKtoryJeJehoFriendom = true;
                                 }else{
@@ -404,8 +415,12 @@ void *messageHandler(void *d){
                 }
             }
             fclose(fptr);
+
             if(poslalUzivateloviKtoryJeJehoFriendom){
                 char *token = strtok(NULL, " ");
+
+                printf("tu ocakavam prve slovo obsahu msgC: %s\n",token);
+
                 bzero(text, 201);
 
                 while (token != NULL) {
@@ -414,6 +429,8 @@ void *messageHandler(void *d){
                     token = strtok(NULL, " ");
                 }
                 text[strlen(text) - 1] = 0;
+                printf("tu ocakavam prve zlepeny obsahu z msgC: %s\n",text);
+
 
 
 //            printf("Client(%d)\n", client->newsockfd);
@@ -435,6 +452,8 @@ void *messageHandler(void *d){
                 strcat(txtt, " ");
                 strcat(txtt, text);
 
+                printf("ocakavany zapis do msgLog: %s\n",txtt);
+
                 fprintf(fptr, txtt);
                 fclose(fptr);
 
@@ -445,17 +464,6 @@ void *messageHandler(void *d){
                 strcat(tmp, ": ");
                 strcat(tmp, text);
 
-            int x = client->newsockfd;
-            for (int i = 4; i < data->size; i++) {
-                if (!strcmp(data->client[i].name, user)) {
-                    x = data->client[i].newsockfd;
-                    break;
-                }
-            }
-            n = (int)write(x, tmp, strlen(tmp));
-            if (n < 0) {
-                perror("Error writing to socket");
-                exit(5);
                 int x = client->newsockfd;
                 for (int i = 4; i < data->size; i++) {
                     if (!strcmp(data->client[i].name, user)) {
@@ -467,8 +475,19 @@ void *messageHandler(void *d){
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
+                    x = client->newsockfd;
+                    for (int i = 4; i < data->size; i++) {
+                        if (!strcmp(data->client[i].name, user)) {
+                            x = data->client[i].newsockfd;
+                            break;
+                        }
+                    }
+                    n = (int)write(x, tmp, strlen(tmp));
+                    if (n < 0) {
+                        perror("Error writing to socket");
+                        exit(5);
+                    }
                 }
-            }
             }
         } else if (!strcmp(command, "show")) {
             char *temp = "*";
