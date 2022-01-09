@@ -10,6 +10,7 @@
 
 
 typedef struct client{
+
     char* name;
     int newsockfd;
     struct client* friends;
@@ -1006,17 +1007,30 @@ void *print(void *d){
 
 int main(int argc, char *argv[]) {
     //todo check if the txt files are created in correct path
+    printf("startujem main\n");
+
     FILE *file;
-    if( access( "userData.txt", F_OK ) == 0 ) {
+    file = fopen("milanko.txt","a+");
+    fprintf(file,"ahoj %i\n",16);
+
+
+    fclose(file);
+    printf("koniec milanko\n");
+
+    if( access( "/userData.txt", F_OK ) == 0 ) {
+        printf("userData ok\n");
     } else {
-        file = fopen("userData.txt", "r");
+        printf("nema access k userData\n");
+        file = fopen("/userData.txt", "r");
+        printf("nema access k userData po fopne\n");
         fclose(file);
     }
-    if( access( "groupData.txt", F_OK ) == 0 ) {
+    if( access( "/groupData.txt", F_OK ) == 0 ) {
     } else {
-        file = fopen("groupData.txt", "r");
+        file = fopen("/groupData.txt", "r");
         fclose(file);
     }
+    printf("groupData finished\n");
     if( access( "friendData.txt", F_OK ) == 0 ) {
     } else {
         file = fopen("friendData.txt", "r");
@@ -1032,7 +1046,7 @@ int main(int argc, char *argv[]) {
         file = fopen("groupLog.txt", "r");
         fclose(file);
     }
-
+    printf("skoncila inicializacia suborov \n");
     pthread_mutex_t mutex;
     pthread_cond_t cGenerate;
     pthread_cond_t cPrint;
