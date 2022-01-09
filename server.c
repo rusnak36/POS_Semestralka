@@ -34,8 +34,17 @@ void *listenerThread(void*d){
         bzero(input,256);
         scanf("%s", input);
         if(!strcmp(input, "shutdown")){
-            pthread_cancel(data->vlakno);
-            break;
+            int count = 0;
+            for(int i=0; i < data->size; i++){
+                if(!strcmp(data->client[i].name, "*")){
+                }else{
+                    count++;
+                }
+            }
+            if(count == 0){
+                pthread_cancel(data->vlakno);
+                break;
+            }
         }
     }
 }
@@ -459,6 +468,7 @@ void *messageHandler(void *d){
                     perror("Error writing to socket");
                     exit(5);
                 }
+            }
             }
         } else if (!strcmp(command, "show")) {
             char *temp = "*";
