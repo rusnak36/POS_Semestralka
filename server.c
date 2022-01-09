@@ -21,8 +21,6 @@ typedef struct data{
     Client* client;
     int size;
     pthread_mutex_t* mutex;
-    pthread_cond_t* cGenerate;
-    pthread_cond_t* cPrint;
     pthread_t vlakno;
 } Data;
 
@@ -160,6 +158,7 @@ void *messageHandler(void *d){
                 return 0;
             }
 
+
             while (fgets(line, sizeof(line), fptr)) {
                 tname = strtok(line, " ");
                 if(tname == name){
@@ -192,7 +191,6 @@ void *messageHandler(void *d){
                 }
                 break;
             }
-            continue;
 
         } else if (!strcmp(command, "reg")) {
             name = strtok(NULL, " ");
@@ -370,7 +368,8 @@ void *messageHandler(void *d){
 
             char* status = "offline ";
             for(int i = 4; i < data->size; i++){
-                if(strcmp(data->client[i].name, user) ){
+                if(!strcmp(data->client[i].name, user) ){
+                }else{
                     status = "online ";
                     break;
                 }
@@ -561,7 +560,8 @@ void *messageHandler(void *d){
             strcat(finall, "show ");
 
             for (int i = 4; i < data->size; i++) {
-                if (strcmp(data->client[i].name, temp)) {
+                if (!strcmp(data->client[i].name, temp)) {
+                }else{
                     strcat(finall, data->client[i].name);
                     strcat(finall, " ");
                 }
@@ -612,7 +612,9 @@ void *messageHandler(void *d){
                 perror("Error writing to socket");
                 exit(5);
             }
+
             client->request = NULL;
+            continue;
 
         }else if (!strcmp(command, "unfriend")) {
             //todo milan sem treba zabezpecit ze ak je typek offline tak aby mu prisla info msg ze ho uz ludia nemaju radi
@@ -797,11 +799,25 @@ void *messageHandler(void *d){
                 if(posuvaj){
                     client->friends[i-1] = client->friends[i];
                 }
-                if(client->friends[i].name == badFriend){
+
+                if(!strcmp(client->friends[i].name , badFriend)){
                     client->friends[i].name = "*";
                     posuvaj = true;
+
+                    if(client->friends[i].newsockfd > 0){
+                        char str[100];
+                        bzero(str, 100);
+                        strcat(str, client->name);
+                        strcat(str, " si vas odobral z priatelov.\n");
+                        n = (int)write(client->friends[i].newsockfd, str, strlen(str));
+                        if (n > 0) {
+                            perror("Error writing to socket");
+                            exit(5);
+                        }
+                    }
                 }
             }
+
             client->nastaloMazanie = true;
 
 
@@ -816,7 +832,7 @@ void *messageHandler(void *d){
                 if(posuvaj){
                     docasny->friends[i-1] = docasny->friends[i];
                 }
-                if(docasny->friends[i].name == client->name){
+                if(!strcmp(docasny->friends[i].name, client->name)){
                     docasny->friends[i].name = "*";
                     posuvaj = true;
                 }
@@ -966,7 +982,6 @@ void *messageHandler(void *d){
         }  else if (!strcmp(command, "createGroup")) {
             char* groupName = strtok(NULL, " ");
             char* pocet = strtok(NULL, " ");
-            char* user = "";
             char temp[300];
             bzero(temp, 300);
             FILE *fptr;
@@ -974,11 +989,11 @@ void *messageHandler(void *d){
             bzero(final, 300);
 
             user = strtok(NULL, " ");
-            int x = atoi(pocet);
+            int x = (int)atoi(pocet);
             for(int i = 0; i < x; i++) {
                 strcat(temp, user);
 
-                if(i+1 == atoi(pocet)) {
+                if(i+1 == (int)atoi(pocet)) {
                     user[strlen(user) - 1] = 0;
                 } else {
                     strcat(temp, " ");
@@ -1004,21 +1019,21 @@ void *messageHandler(void *d){
             char* temp = "";
             char* groupToMSG = "";
             groupToMSG = strtok(NULL, " ");
-            char text[300];
-            bzero(text, 300);
+            char text5[300];
+            bzero(text5, 300);
             char* word = "";
             char final[300];
             bzero(final, 300);
 
             word = strtok(NULL, " ");
-            strcat(text, word);
+            strcat(text5, word);
             while(1) {
-                strcat(text, " ");
+                strcat(text5, " ");
                 word = strtok(NULL, " ");
                 if(word == NULL) {
                     break;
                 }
-                strcat(text, word);
+                strcat(text5, word);
             }
 
             strcat(final, "msgg ");
@@ -1026,7 +1041,7 @@ void *messageHandler(void *d){
             strcat(final, " ");
             strcat(final, client->name);
             strcat(final, " ");
-            strcat(final, text);
+            strcat(final, text5);
 
             while (fgets(line, sizeof(line), fptr)) {
                 groupName = strtok(line, " ");
@@ -1034,12 +1049,13 @@ void *messageHandler(void *d){
                     pocet = atoi(strtok(NULL, " "));
                     for(int i = 0; i < pocet; i++) {
                         temp = strtok(NULL, " ");
-                        if(i+1 == pocet) {
+                        if(i+1 == (int)pocet) {
                             temp[strlen(temp) - 1] = 0;
                         }
                         for (int j = 0; j < data->size; j++) {
                             if(!strcmp(data->client[j].name, temp)) {
-                                if(strcmp(temp, client->name)) {
+                                if(!strcmp(temp, client->name)) {
+                                }else{
                                     n = (int)write(data->client[j].newsockfd, final, strlen(final));
                                     if (n < 0) {
                                         perror("Error writing to socket");
@@ -1063,7 +1079,10 @@ void *messageHandler(void *d){
             final[strlen(final) - 1] = 0;
             fprintf(fptr2, final);
             fclose(fptr2);
-        } else if (!strcmp(command, "history")) {
+        }
+        if (!strcmp(command, "history") || !strcmp(command, "log") ) {
+            printf("history/log combo %s\n", command);
+
             char line[300];
             FILE *fptr;
             fptr = fopen("msgLog.txt", "r");
@@ -1108,6 +1127,7 @@ void *messageHandler(void *d){
                     n = (int)write(client->newsockfd, final, strlen(final));
                     if (n < 0) {
                         perror("Error writing to socket");
+
                         exit(5);
                     }
 
