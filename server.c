@@ -10,7 +10,6 @@
 
 
 typedef struct client{
-
     char* name;
     int newsockfd;
     struct client* friends;
@@ -27,22 +26,16 @@ typedef struct data{
     pthread_cond_t* cPrint;
 } Data;
 
-void *listener(void*d){
+void *listenerThread(void*d){
     char input[256];
     Data *data = d;
-    int n = 0;
+    int n= 0;
     while(1){
         bzero(input,256);
         scanf("%s", input);
         if(!strcmp(input, "shutdown")){
-            for(int i = 0; i < data->size; i++){
-                n = (int)write(data->client[i].newsockfd, "terminujem ta", 14);
-                if (n < 0) {
-                    perror("Error writing to socket");
-                    exit(5);
-
-                }
-            }
+            pthread_cancel(data->vlakno);
+            break;
         }
     }
 }
@@ -349,15 +342,68 @@ void *generate(void *d){
             break;
         } else if (!strcmp(command, "msgC")) {
             user = strtok(NULL, " ");
-            char *token = strtok(NULL, " ");
-            bzero(text, 201);
+            bool poslalUzivateloviKtoryJeJehoFriendom = false;
 
-            while (token != NULL) {
-                strcat(text, token);
-                strcat(text, " ");
-                token = strtok(NULL, " ");
+            FILE *fptr;
+            fptr = fopen("friendData.txt", "r");
+            if (fptr == NULL) {
+                printf("Error! neviem otvorit subor friendData.\n");
+                break;
             }
-            text[strlen(text) - 1] = 0;
+
+            char line[300];
+            bzero(line, 300);
+            while(fgets(line, sizeof(line), fptr)){
+                char* tname = "";
+                tname = strtok(line, " ");
+                if(!strcmp(tname, client->name)){
+                    int pocetFriendovAkceptujuci = atoi(strtok(NULL, " "));
+                    if(pocetFriendovAkceptujuci > 0) {
+                        for(int i=0; i < pocetFriendovAkceptujuci ;i++){
+                            char* najnovsi = "";
+                            if(i == pocetFriendovAkceptujuci-1){
+                                najnovsi = strtok(NULL, " ");
+                                if(najnovsi == NULL) {
+                                    break;
+                                }
+                                if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+                                    najnovsi[strlen(najnovsi) - 1] = 0;
+                                }
+                                if(!strcmp(najnovsi, user)){
+                                    poslalUzivateloviKtoryJeJehoFriendom = true;
+                                }else{
+                                    if(najnovsi == NULL) {
+                                        break;
+                                    }
+                                    if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+                                        najnovsi[strlen(najnovsi) - 1] = 0;
+                                    }
+                                }
+                            }else{
+                                najnovsi = strtok(NULL, " ");
+                                if(!strcmp(najnovsi, user)){
+                                    poslalUzivateloviKtoryJeJehoFriendom = true;
+                                } else{
+                                    if(najnovsi == NULL) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            fclose(fptr);
+            if(poslalUzivateloviKtoryJeJehoFriendom){
+                char *token = strtok(NULL, " ");
+                bzero(text, 201);
+
+                while (token != NULL) {
+                    strcat(text, token);
+                    strcat(text, " ");
+                    token = strtok(NULL, " ");
+                }
+                text[strlen(text) - 1] = 0;
 
 
 //            printf("Client(%d)\n", client->newsockfd);
@@ -365,42 +411,42 @@ void *generate(void *d){
 //            printf("Pre osobu: %s\n", user);
 //            printf("S obsahom: %s\n", text);
 
-            FILE *fptr;
-            fptr = fopen("msgLog.txt", "a");
-            if (fptr == NULL) {
-                printf("Error! neviem otvorit subor msgLog.\n");
-                break;
-            }
-            char txtt[300];
-            bzero(txtt, 300);
-            strcat(txtt, "s ");
-            strcat(txtt, client->name);
-            strcat(txtt, " ");
-            strcat(txtt, user);
-            strcat(txtt, " ");
-            strcat(txtt, text);
-
-            fprintf(fptr, txtt);
-            fclose(fptr);
-
-            char tmp[256];
-            bzero(tmp, 256);
-            strcat(tmp, "s ");
-            strcat(tmp, client->name);
-            strcat(tmp, ": ");
-            strcat(tmp, text);
-
-            int x = client->newsockfd;
-            for (int i = 4; i < data->size; i++) {
-                if (!strcmp(data->client[i].name, user)) {
-                    x = data->client[i].newsockfd;
+                fptr = fopen("msgLog.txt", "a");
+                if (fptr == NULL) {
+                    printf("Error! neviem otvorit subor msgLog.\n");
                     break;
                 }
-            }
-            n = (int)write(x, tmp, strlen(tmp));// +1 za
-            if (n < 0) {
-                perror("Error writing to socket");
-                exit(5);
+                char txtt[300];
+                bzero(txtt, 300);
+                strcat(txtt, "s ");
+                strcat(txtt, client->name);
+                strcat(txtt, " ");
+                strcat(txtt, user);
+                strcat(txtt, " ");
+                strcat(txtt, text);
+
+                fprintf(fptr, txtt);
+                fclose(fptr);
+
+                char tmp[256];
+                bzero(tmp, 256);
+                strcat(tmp, "s ");
+                strcat(tmp, client->name);
+                strcat(tmp, ": ");
+                strcat(tmp, text);
+
+                int x = client->newsockfd;
+                for (int i = 4; i < data->size; i++) {
+                    if (!strcmp(data->client[i].name, user)) {
+                        x = data->client[i].newsockfd;
+                        break;
+                    }
+                }
+                n = (int)write(x, tmp, strlen(tmp));// +1 za
+                if (n < 0) {
+                    perror("Error writing to socket");
+                    exit(5);
+                }
             }
         } else if (!strcmp(command, "show")) {
             char *temp = "*";

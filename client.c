@@ -384,6 +384,7 @@ int main(int argc, char *argv[])
 
 
 
+
         if(!strcmp(buffer, "Boli ste uspesne registrovany.")){ // spravne udaje
             scanf("%c", (char *) stdin);
 
