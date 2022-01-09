@@ -7,15 +7,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <string.h>
 #include <stdbool.h>
 
-
-
-void *mWrite(int sockfd){
-
+void *mWrite(void* p){
     int n;
     char buffer[256];
+    int* sockfd = (int*)p;
 
     while(1){
         bzero(buffer,256);
@@ -55,7 +52,7 @@ void *mWrite(int sockfd){
                 text[i] += 1;
             }
             //shift podla pozicie
-            int shift = 0;
+            int shift;
             for(int i=0; i < strlen(text)-1; i++) {
                 shift = i % 4;
                 text[i] += shift;
@@ -77,7 +74,7 @@ void *mWrite(int sockfd){
             }
 
 
-            char* crypted[300];
+            char crypted[300];
             bzero(crypted,300);
             strcat(crypted, command);
             strcat(crypted, " ");
@@ -87,16 +84,17 @@ void *mWrite(int sockfd){
             printf("original: %s", buffer);
             printf("    copy: %s\n", crypted);
 
-            n = write(sockfd, crypted, strlen(crypted)+1);
+            n = (int)write(*sockfd, crypted, strlen(crypted)+1);
             if (n < 0) {
                 perror("Error writing to socket");
-                return 5;
+                exit(5);
             }
         }else{
-            n = write(sockfd, buffer, strlen(buffer)+1);
+            n = (int)write(*sockfd, buffer, strlen(buffer)+1);
             if (n < 0) {
                 perror("Error writing to socket");
-                return 5;
+                exit(5);
+
             }
             if(!strcmp(buffer, "quit\n")){
                 free(dup);
@@ -108,20 +106,22 @@ void *mWrite(int sockfd){
     }
 }
 
-void *mRead(int sockfd){
+void *mRead(void* p){
     int n;
     char buffer[256];
 
+    int* sockfd = (int*)p;
+
     while(1){
         bzero(buffer,256);
-        n = read(sockfd, buffer, 255);
+        n = (int)read(*sockfd, buffer, 255);
         if (n < 0) {
             perror("Error reading from socket");
-            return 6;
+            exit(6);
         }
 
         if(!strcmp(buffer, "terminujem ta")){
-            printf("reeeeeeeeeeeeeeeee\n");
+            printf("boli ste odhlaseny zo serveru.\n");
             break;
         }
 
@@ -162,7 +162,7 @@ void *mRead(int sockfd){
                     text[i+1] = c;
                 }
             }
-            int shift = 0;
+            int shift;
             for(int i=0; i < strlen(text)-1; i++) {
                 shift = i % 4;
                 text[i] -= shift;
@@ -205,8 +205,6 @@ void *mRead(int sockfd){
             strcat(final,text);
             printf("%s\n", final);
         }else if(!strcmp(command, "show")){
-            printf("I AM HERE BITCHES!\n");
-
             char text[300];
             char * token = strtok(NULL, " ");
             bzero(text,300);
@@ -310,7 +308,7 @@ int main(int argc, char *argv[])
             printf("obsah buffera odoslaneho na server: %s\n", buffer);
             printf("dlzka buffera(bez +1): %d\n", (int)strlen(buffer));
 
-            n = write(sockfd, buffer, strlen(buffer));
+            n = (int)write(sockfd, buffer, strlen(buffer));
             if (n < 0) {
                 perror("Error writing to socket");
                 return 6;
@@ -335,7 +333,7 @@ int main(int argc, char *argv[])
             strcat(buffer, password);
             printf("NA SERVER POSIELAM TENTO STRING: %s\n", buffer);
 
-            n = write(sockfd, buffer, strlen(buffer));
+            n = (int)write(sockfd, buffer, strlen(buffer));
             if (n < 0) {
                 perror("Error writing to socket");
                 return 6;
@@ -349,7 +347,7 @@ int main(int argc, char *argv[])
 
     //ak si sa prihlasoval
     if(log){
-        n = read(sockfd, buffer, 255);
+        n = (int)read(sockfd, buffer, 255);
         if (n < 0) {
             perror("Error reading from socket");
             return 6;
@@ -363,18 +361,18 @@ int main(int argc, char *argv[])
             pthread_t tRead;
             pthread_t tWrite;
 
-            pthread_create(&tRead, NULL, &mRead, sockfd);
-            pthread_create(&tWrite, NULL, &mWrite, sockfd);
+            pthread_create(&tRead, NULL, &mRead, &sockfd);
+            pthread_create(&tWrite, NULL, &mWrite, &sockfd);
 
             pthread_join(tRead, NULL);
             pthread_join(tWrite, NULL);
         }else{ // nespravne udaje
-            printf("Better learn how to type mate!");
+            printf("Boli zadane udaje ktore nie su spravne!");
         }
 
 
     }else{ //registroval si sa
-        n = read(sockfd, buffer, 255);
+        n = (int)read(sockfd, buffer, 255);
         if (n < 0) {
             perror("Error reading from socket");
             return 6;
@@ -383,17 +381,23 @@ int main(int argc, char *argv[])
         int result = strcmp(buffer, "Boli ste uspesne registrovany.");
         printf("result: %d\n",result);
 
+
+
+
         if(!strcmp(buffer, "Boli ste uspesne registrovany.")){ // spravne udaje
+            scanf("%c", (char *) stdin);
+
             pthread_t tRead;
             pthread_t tWrite;
 
-            pthread_create(&tRead, NULL, &mRead, sockfd);
-            pthread_create(&tWrite, NULL, &mWrite, sockfd);
+            // void *mRead(int sockfd) {
+            pthread_create(&tRead, NULL, &mRead, &sockfd);
+            pthread_create(&tWrite, NULL, &mWrite, &sockfd);
 
             pthread_join(tRead, NULL);
             pthread_join(tWrite, NULL);
         }else{ // nespravne udaje
-            printf("boha jeho treba novy nick!");
+            printf("meno ktore ste zadali je uz obsadene!");
         }
     }
     bzero(buffer, 256);

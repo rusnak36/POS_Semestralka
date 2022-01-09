@@ -36,7 +36,7 @@ void *listener(void*d){
         scanf("%s", input);
         if(!strcmp(input, "shutdown")){
             for(int i = 0; i < data->size; i++){
-                n = write(data->client[i].newsockfd, "terminujem ta", 14);
+                n = (int)write(data->client[i].newsockfd, "terminujem ta", 14);
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
@@ -87,17 +87,16 @@ void *generate(void *d){
         }
 
         bzero(buffer, 256);
-        n = read(client->newsockfd, buffer, 255);
+        n = (int)read(client->newsockfd, buffer, 255);
         if (n < 0) {
             perror("Error reading from socket");
             exit(4);
         }
         printf("Here is the message: %s\n", buffer);
         if (strlen(buffer) < 2) {
-            printf("Preventol som kokotinu!!!\n");
+            printf("Preventol som sprave kde bol buffer mensi ako 2\n");
             sleep(3);
             continue;
-
         }
 
         char *msg = buffer;
@@ -106,6 +105,7 @@ void *generate(void *d){
         char *password;
         char *user;
         char text[201];
+
 
         if (!strcmp(buffer, "quit\n")) {
             command = "quit";
@@ -125,7 +125,7 @@ void *generate(void *d){
             name = strtok(NULL, " ");
             password = strtok(NULL, " ");
             FILE *fptr;
-            fptr = fopen("/home/pos/userData.txt", "r");
+            fptr = fopen("userData.txt", "r");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit userData.txt\n");
                 break;
@@ -152,7 +152,7 @@ void *generate(void *d){
 
             int fnum=0;
             char* tfriend;
-            fptr = fopen("/home/pos/friendData.txt","r");
+            fptr = fopen("friendData.txt","r");
             if (!fptr) {
                 printf("Neviem otvorit friendData.txt!!\n");
                 return 0;
@@ -173,23 +173,30 @@ void *generate(void *d){
             //logniho alebo ho posli dopice
 
             if (jeVsubore) {
-                n = write(client->newsockfd, "ok", 3);
+                n = (int)write(client->newsockfd, "ok", 3);
+                if (n < 0) {
+                    perror("Error writing to socket");
+                    exit(5);
+                }
+
+
+
                 client->name = strdup(name);
             } else {
-                n = write(client->newsockfd, "nok", 4);
+                n = (int)write(client->newsockfd, "nok", 4);
+                if (n < 0) {
+                    perror("Error writing to socket");
+                    exit(5);
+                }
+                break;
             }
-            if (n < 0) {
-                perror("Error writing to socket");
-                exit(5);
-            }
-
             continue;
 
         } else if (!strcmp(command, "reg")) {
             name = strtok(NULL, " ");
             password = strtok(NULL, " ");
             FILE *fptr;
-            fptr = fopen("/home/pos/userData.txt", "r");
+            fptr = fopen("userData.txt", "r");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor userData.txt.\n");
                 break;
@@ -218,24 +225,29 @@ void *generate(void *d){
             fclose(fptr);
 
             if (jeVsubore) {
-                n = write(client->newsockfd, "Meno je obsadene.", 18);
-            } else {
-                fptr = fopen("/home/pos/userData.txt", "a");
-                fprintf(fptr, tmp);
-                fclose(fptr);
-
-
-                fptr = fopen("/home/pos/friendData.txt","a");
-                fprintf(fptr, name);
-                fprintf(fptr, " 0 \n");
-                fclose(fptr);
-
-                n = write(client->newsockfd, "Boli ste uspesne registrovany.", 31);
+                n = (int)write(client->newsockfd, "Meno je obsadene.", 18);
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
                 }
-                n = write(client->newsockfd, "Teraz vas prihlasime.", 22);
+                break;
+            } else {
+                fptr = fopen("userData.txt", "a");
+                fprintf(fptr, tmp);
+                fclose(fptr);
+
+
+                fptr = fopen("friendData.txt","a");
+                fprintf(fptr, name);
+                fprintf(fptr, " 0 \n");
+                fclose(fptr);
+
+                n = (int)write(client->newsockfd, "Boli ste uspesne registrovany.", 31);
+                if (n < 0) {
+                    perror("Error writing to socket");
+                    exit(5);
+                }
+                n = (int)write(client->newsockfd, "Teraz vas prihlasime.", 22);
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
@@ -268,7 +280,7 @@ void *generate(void *d){
 //            printf("S obsahom: %s\n", text);
 
             FILE *fptr;
-            fptr = fopen("/home/pos/msgLog.txt", "a");
+            fptr = fopen("msgLog.txt", "a");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor msgLog.\n");
                 break;
@@ -295,38 +307,38 @@ void *generate(void *d){
 
             if(x == 0) {
                 char* temp = "msg Tento uzivatel momentalne nieje online, precita si vasu spravu neskor";
-                n = write(client->newsockfd, temp, strlen(temp));
+                n = (int)write(client->newsockfd, temp, strlen(temp));
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
                 }
             } else {
-                n = write(x, tmp, strlen(tmp));
+                n = (int)write(x, tmp, strlen(tmp));
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
                 }
             }
 
-            char fetak[300];
-            bzero(fetak, 300);
+            char txtttt[300];
+            bzero(txtttt, 300);
 
             if(jeOnline){
-                strcat(fetak, "online ");
+                strcat(txtttt, "online ");
             } else {
-                strcat(fetak, "offline ");
+                strcat(txtttt, "offline ");
             }
-            strcat(fetak, "n ");
-            strcat(fetak, client->name);
-            strcat(fetak, " ");
-            strcat(fetak, name);
-            strcat(fetak, " ");
-            strcat(fetak, text);
-            fprintf(fptr, fetak);
+            strcat(txtttt, "n ");
+            strcat(txtttt, client->name);
+            strcat(txtttt, " ");
+            strcat(txtttt, name);
+            strcat(txtttt, " ");
+            strcat(txtttt, text);
+            fprintf(fptr, txtttt);
             fclose(fptr);
 
         } else if (!strcmp(command, "quit")) {
-            n = write(client->newsockfd, "terminujem ta", 14);
+            n = (int)write(client->newsockfd, "terminujem ta", 14);
             if (n < 0) {
                 perror("Error writing to socket");
                 exit(5);
@@ -354,7 +366,7 @@ void *generate(void *d){
 //            printf("S obsahom: %s\n", text);
 
             FILE *fptr;
-            fptr = fopen("/home/pos/msgLog.txt", "a");
+            fptr = fopen("msgLog.txt", "a");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor msgLog.\n");
                 break;
@@ -385,7 +397,7 @@ void *generate(void *d){
                     break;
                 }
             }
-            n = write(x, tmp, strlen(tmp));// +1 za
+            n = (int)write(x, tmp, strlen(tmp));// +1 za
             if (n < 0) {
                 perror("Error writing to socket");
                 exit(5);
@@ -402,7 +414,7 @@ void *generate(void *d){
                     strcat(finall, " ");
                 }
             }
-            n = write(client->newsockfd, finall, strlen(finall));
+            n = (int)write(client->newsockfd, finall, strlen(finall));
             if (n < 0) {
                 perror("Error writing to socket");
                 exit(5);
@@ -424,14 +436,14 @@ void *generate(void *d){
                 bzero(temp2, strlen(temp1) + strlen(client->name));
                 strcat(temp2, temp1);
                 strcat(temp2, client->name);
-                n = write(x, temp2, strlen(temp2));
+                n = (int)write(x, temp2, strlen(temp2));
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
                 }
                 data->client[x].request = client;
             } else {
-                n = write(client->newsockfd, "Tento uzivatel nieje prihlasny!\n", 33);
+                n = (int)write(client->newsockfd, "Tento uzivatel nieje prihlasny!\n", 33);
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
@@ -443,7 +455,7 @@ void *generate(void *d){
             strcat(str, "noFriendsForYou");
             strcat(str, " ");
             strcat(str, client->name);
-            n = write(client->newsockfd, str, strlen(str));
+            n = (int)write(client->newsockfd, str, strlen(str));
             if (n < 0) {
                 perror("Error writing to socket");
                 exit(5);
@@ -462,16 +474,16 @@ void *generate(void *d){
 
             FILE* fptr;
             FILE* fakefptr;
-            fptr = fopen("/home/pos/friendData.txt","r");
+            fptr = fopen("friendData.txt","r");
             if (!fptr) {
                 printf("neviem otvorit friendData.txt!\n");
-                return 1;
+                exit(6);
             }
 
-            fakefptr = fopen("/home/pos/tmp.txt", "w");
+            fakefptr = fopen("tmp.txt", "w");
             if (!fakefptr){
                 printf("neviem otvorit tmp file!!\n");
-                return 1;
+                exit(6);
             }
 
             char line[300];
@@ -526,7 +538,7 @@ void *generate(void *d){
                             }
                         }
                     }else{
-                        n = write(client->newsockfd, "Nemas ziadnych kamaratov\n", 20);
+                        n = (int)write(client->newsockfd, "Nemas ziadnych kamaratov\n", 20);
                         if (n < 0) {
                             perror("Error writing to socket");
                             exit(5);
@@ -615,13 +627,13 @@ void *generate(void *d){
             fclose(fakefptr);
             fclose(fptr);
 
-            if (remove("/home/pos/friendData.txt") == 0) {
+            if (remove("friendData.txt") == 0) {
                 printf("The file friendData is deleted successfully.\n");
             } else {
                 printf("The file friendData.txt is not deleted.\n");
 
             }
-            int resulttt = rename("/home/pos/tmp.txt", "/home/pos/friendData.txt");
+            int resulttt = rename("tmp.txt", "friendData.txt");
             if (resulttt == 0) {
                 printf("The file tmp.txt is renamed successfully to friendData.\n");
             } else {
@@ -635,7 +647,7 @@ void *generate(void *d){
                 }
                 if(client->friends[i].name == badFriend){
                     client->friends[i].name = "*";
-                    bool posuvaj = true;
+                    posuvaj = true;
                 }
             }
             client->nastaloMazanie = true;
@@ -654,7 +666,7 @@ void *generate(void *d){
                 }
                 if(docasny->friends[i].name == client->name){
                     docasny->friends[i].name = "*";
-                    bool posuvaj = true;
+                    posuvaj = true;
                 }
             }
 
@@ -662,7 +674,7 @@ void *generate(void *d){
 
         } else if (!strcmp(command, "accept")) {
             if(client->request == NULL) {
-                n = write(client->newsockfd, "Nie je koho pridat!\n", 20);
+                n = (int)write(client->newsockfd, "Nie je koho pridat!\n", 20);
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
@@ -673,13 +685,13 @@ void *generate(void *d){
             //todo fucking file to file line altering BS
             FILE* fptr;
             FILE* fakefptr;
-            fptr = fopen("/home/pos/friendData.txt","r");
+            fptr = fopen("friendData.txt","r");
             if (!fptr) {
                 printf("Unable to open the original friendData file!!\n");
                 return 0;
             }
 
-            fakefptr = fopen("/home/pos/tmp.txt", "w");
+            fakefptr = fopen("tmp.txt", "w");
             if (!fakefptr) {
                 printf("Unable to open the tmp file!!\n");
                 return 0;
@@ -769,13 +781,13 @@ void *generate(void *d){
             fclose(fakefptr);
             fclose(fptr);
 
-            if (remove("/home/pos/friendData.txt") == 0) {
+            if (remove("friendData.txt") == 0) {
                 printf("The file friendData is deleted successfully.\n");
             } else {
                 printf("The file friendData.txt is not deleted.\n");
 
             }
-            int resulttt = rename("/home/pos/tmp.txt", "/home/pos/friendData.txt");
+            int resulttt = rename("tmp.txt", "friendData.txt");
             if (resulttt == 0) {
                 printf("The file tmp.txt is renamed successfully to friendData.\n");
             } else {
@@ -812,18 +824,16 @@ void *generate(void *d){
             user = strtok(NULL, " ");
             int x = atoi(pocet);
             for(int i = 0; i < x; i++) {
-
                 strcat(temp, user);
 
-                if(i+1 == pocet) {
+                if(i+1 == atoi(pocet)) {
                     user[strlen(user) - 1] = 0;
                 } else {
                     strcat(temp, " ");
                 }
-
                 user = strtok(NULL, " ");
             }
-            fptr = fopen("/home/pos/groupData.txt", "a");
+            fptr = fopen("groupData.txt", "a");
             strcat(final, groupName);
             strcat(final, " ");
             strcat(final, pocet);
@@ -835,7 +845,7 @@ void *generate(void *d){
             fclose(fptr);
         } else if (!strcmp(command, "msgg")) {
             FILE *fptr;
-            fptr = fopen("/home/pos/groupData.txt", "r");
+            fptr = fopen("groupData.txt", "r");
             char line[256];
             char* groupName = "";
             int pocet = 0;
@@ -859,7 +869,6 @@ void *generate(void *d){
                 strcat(text, word);
             }
 
-
             strcat(final, "msgg ");
             strcat(final, groupToMSG);
             strcat(final, " ");
@@ -879,7 +888,7 @@ void *generate(void *d){
                         for (int j = 0; j < data->size; j++) {
                             if(!strcmp(data->client[j].name, temp)) {
                                 if(strcmp(temp, client->name)) {
-                                    n = write(data->client[j].newsockfd, final, strlen(final));
+                                    n = (int)write(data->client[j].newsockfd, final, strlen(final));
                                     if (n < 0) {
                                         perror("Error writing to socket");
                                         exit(5);
@@ -894,7 +903,7 @@ void *generate(void *d){
             fclose(fptr);
 
             FILE *fptr2;
-            fptr2 = fopen("/home/pos/groupLog.txt", "a");
+            fptr2 = fopen("groupLog.txt", "a");
             if (fptr2 == NULL) {
                 printf("Error! neviem otvorit subor groupLog.\n");
                 break;
@@ -905,7 +914,7 @@ void *generate(void *d){
         } else if (!strcmp(command, "history")) {
             char line[300];
             FILE *fptr;
-            fptr = fopen("/home/pos/msgLog.txt", "r");
+            fptr = fopen("msgLog.txt", "r");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor msgLog.\n");
                 break;
@@ -927,6 +936,7 @@ void *generate(void *d){
                 while(1) {
                     char* temp = "";
                     temp = strtok(NULL, " ");
+
                     if(temp == NULL) {
                         sprava[strlen(sprava) - 1] = 0;
                         break;
@@ -943,7 +953,7 @@ void *generate(void *d){
                     strcat(final, ": ");
                     strcat(final, sprava);
 
-                    n = write(client->newsockfd, final, strlen(final));
+                    n = (int)write(client->newsockfd, final, strlen(final));
                     if (n < 0) {
                         perror("Error writing to socket");
                         exit(5);
@@ -1018,7 +1028,6 @@ int main(int argc, char *argv[]) {
     file = fopen("msgLog.txt","a+");
     fclose(file);
     file = fopen("groupLog.txt","a+");
-
     fclose(file);
 
     pthread_mutex_t mutex;
