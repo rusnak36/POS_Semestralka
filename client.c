@@ -13,13 +13,13 @@ void *mWrite(void* p){
     int n;
     char buffer[256];
     int* sockfd = (int*)p;
-
     while(1){
         bzero(buffer,256);
         fgets(buffer, 255, stdin);
         printf("\n");
         printf("vypis obsahu buffera z write thready: %s",buffer);
         printf("pocet znakov(aj s koncovym bielim znakom): %d\n",(int)strlen(buffer));
+
 
         char *dup = strdup(buffer);
         char* command;
@@ -28,6 +28,7 @@ void *mWrite(void* p){
             printf("je to msgC\n");
             char* komu;
             char text[201];
+
 
             komu = strtok(NULL, " ");
             printf("komu: %s\n",komu);
@@ -392,8 +393,8 @@ int main(int argc, char *argv[])
             pthread_t tWrite;
 
             // void *mRead(int sockfd) {
-            pthread_create(&tRead, NULL, &mRead, &sockfd);
             pthread_create(&tWrite, NULL, &mWrite, &sockfd);
+            pthread_create(&tRead, NULL, &mRead, &sockfd);
 
             pthread_join(tRead, NULL);
             pthread_join(tWrite, NULL);
