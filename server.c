@@ -27,7 +27,29 @@ typedef struct data{
     pthread_cond_t* cPrint;
 } Data;
 
+void *listener(void*d){
+    char input[256];
+    Data *data = d;
+    int n= 0;
+    while(1){
+        bzero(input,256);
+        scanf("%s", input);
+        if(!strcmp(input, "shutdown")){
+            printf("vypni vsetko\n");
+            for(int i = 0; i < data->size; i++){
+                n = write(data->client[i].newsockfd, "terminujem ta", 14);
+                if (n < 0) {
+                    perror("Error writing to socket");
+                    exit(5);
+
+                }
+            }
+        }
+    }
+}
+
 void *generate(void *d){
+
 
     Data* data = d;
     Client friends[50];
@@ -1081,7 +1103,9 @@ int main(int argc, char *argv[])
     pthread_cond_init(&cGenerate, NULL);
     pthread_cond_init(&cPrint, NULL);
 
+
     pthread_t printer;
+    pthread_t tlistener;
 
     Client client[100];
 
@@ -1096,8 +1120,10 @@ int main(int argc, char *argv[])
     data.mutex = &mutex;
 
     pthread_create(&printer, NULL, print, &data);
+    pthread_create(&tlistener, NULL, listener, &data);
 
     pthread_join(printer, NULL);
+    pthread_join(tlistener, NULL);
 
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&cGenerate);

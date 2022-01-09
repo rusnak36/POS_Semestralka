@@ -10,7 +10,10 @@
 #include <string.h>
 #include <stdbool.h>
 
+
+
 void *mWrite(int sockfd){
+
     int n;
     char buffer[256];
 
@@ -232,8 +235,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent* server;
 
+
     char buffer[256];
-    free(buffer);
 
     if (argc < 3)
     {
