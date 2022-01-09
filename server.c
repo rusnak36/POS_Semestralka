@@ -368,14 +368,24 @@ void *messageHandler(void *d){
 //            printf("Pre osobu: %s\n", user);
 //            printf("S obsahom: %s\n", text);
 
+            char* status = "offline ";
+            for(int i = 4; i < data->size; i++){
+                if(strcmp(data->client[i].name, user) ){
+                    status = "online ";
+                    break;
+                }
+            }
+
             FILE *fptr;
             fptr = fopen("msgLog.txt", "a");
             if (fptr == NULL) {
                 printf("Error! neviem otvorit subor msgLog.\n");
                 break;
             }
+
             char txtt[300];
             bzero(txtt, 300);
+            strcat(txtt, status);
             strcat(txtt, "s ");
             strcat(txtt, client->name);
             strcat(txtt, " ");
