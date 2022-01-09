@@ -8,7 +8,6 @@
 #include <pthread.h>
 #include <stdbool.h>
 
-
 typedef struct client{
     char* name;
     int newsockfd;
@@ -24,12 +23,13 @@ typedef struct data{
     pthread_mutex_t* mutex;
     pthread_cond_t* cGenerate;
     pthread_cond_t* cPrint;
+    pthread_t vlakno;
 } Data;
 
 void *listenerThread(void*d){
     char input[256];
     Data *data = d;
-    int n= 0;
+    int n = 0;
     while(1){
         bzero(input,256);
         scanf("%s", input);
@@ -40,7 +40,7 @@ void *listenerThread(void*d){
     }
 }
 
-void *generate(void *d){
+void *messageHandler(void *d){
 
 
     Data* data = d;
@@ -240,6 +240,7 @@ void *generate(void *d){
                     perror("Error writing to socket");
                     exit(5);
                 }
+                //todo Iba pre konzolovu aplikaciu
                 n = (int)write(client->newsockfd, "Teraz vas prihlasime.", 22);
                 if (n < 0) {
                     perror("Error writing to socket");
@@ -435,6 +436,17 @@ void *generate(void *d){
                 strcat(tmp, ": ");
                 strcat(tmp, text);
 
+            int x = client->newsockfd;
+            for (int i = 4; i < data->size; i++) {
+                if (!strcmp(data->client[i].name, user)) {
+                    x = data->client[i].newsockfd;
+                    break;
+                }
+            }
+            n = (int)write(x, tmp, strlen(tmp));
+            if (n < 0) {
+                perror("Error writing to socket");
+                exit(5);
                 int x = client->newsockfd;
                 for (int i = 4; i < data->size; i++) {
                     if (!strcmp(data->client[i].name, user)) {
@@ -442,7 +454,7 @@ void *generate(void *d){
                         break;
                     }
                 }
-                n = (int)write(x, tmp, strlen(tmp));// +1 za
+                n = (int)write(x, tmp, strlen(tmp));
                 if (n < 0) {
                     perror("Error writing to socket");
                     exit(5);
@@ -1013,7 +1025,7 @@ void *generate(void *d){
     }
 }
 
-void *print(void *d){
+void *handlerThread(void *d){
     Data* data = d;
     int sockfd, newsockfd;
     socklen_t cli_len;
@@ -1045,16 +1057,16 @@ void *print(void *d){
     cli_len = sizeof(cli_addr);
 
     int pocetClientov = 1;
-    pthread_t generator;
+    pthread_t clientMessageHandler;
     while(data->index < data->size){
         newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr, &cli_len);
         pocetClientov++;
         data->index=newsockfd;
-        pthread_create(&generator, NULL, generate, data);
+        pthread_create(&clientMessageHandler, NULL, messageHandler, data);
     }
 
     for(int i = 0; i < pocetClientov; i++) {
-        pthread_join(generator, NULL);
+        pthread_join(clientMessageHandler, NULL);
     }
 
     close(sockfd);
@@ -1084,8 +1096,9 @@ int main(int argc, char *argv[]) {
     pthread_cond_init(&cGenerate, NULL);
     pthread_cond_init(&cPrint, NULL);
 
-    pthread_t printer;
-    pthread_t tlistener;
+
+    pthread_t clientHandler;
+    pthread_t serverInputListener;
 
     Client client[100];
     for (int i = 0; i < 100; ++i) {
@@ -1098,11 +1111,13 @@ int main(int argc, char *argv[]) {
     data.client = client;
     data.mutex = &mutex;
 
-    pthread_create(&printer, NULL, print, &data);
-    pthread_create(&tlistener, NULL, listener, &data);
+    pthread_create(&clientHandler, NULL, handlerThread, &data);
+    pthread_create(&serverInputListener, NULL, listenerThread, &data);
 
-    pthread_join(printer, NULL);
-    pthread_join(tlistener, NULL);
+    data.vlakno = clientHandler;
+
+    pthread_join(clientHandler, NULL);
+    pthread_join(serverInputListener, NULL);
 
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&cGenerate);
