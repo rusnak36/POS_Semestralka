@@ -352,85 +352,15 @@ void *messageHandler(void *d){
             break;
         } else if (!strcmp(command, "msgC")) {
             user = strtok(NULL, " ");
-            bool poslalUzivateloviKtoryJeJehoFriendom = false;
+            char *token = strtok(NULL, " ");
+            bzero(text, 201);
 
-            FILE *fptr;
-            fptr = fopen("friendData.txt", "r");
-            if (fptr == NULL) {
-                printf("Error! neviem otvorit subor friendData.\n");
-                break;
+            while (token != NULL) {
+                strcat(text, token);
+                strcat(text, " ");
+                token = strtok(NULL, " ");
             }
-
-            char line[300];
-            bzero(line, 300);
-
-            while(fgets(line, sizeof(line), fptr)){
-
-                char* tname = "";
-                tname = strtok(line, " ");
-
-                if(!strcmp(tname, client->name)){
-
-                    int pocetFriendovAkceptujuci = atoi(strtok(NULL, " "));
-
-                    if(pocetFriendovAkceptujuci > 0) {
-
-                        for(int i=0; i < pocetFriendovAkceptujuci ;i++){
-
-                            char* najnovsi = "";
-
-                            if(i == pocetFriendovAkceptujuci-1){
-
-                                najnovsi = strtok(NULL, " ");
-                                if(najnovsi == NULL) {
-                                    break;
-                                }
-
-                                if(najnovsi[strlen(najnovsi) - 1] == '\n') {
-                                    najnovsi[strlen(najnovsi) - 1] = 0;
-                                }
-
-                                if(!strcmp(najnovsi, user)){
-                                    poslalUzivateloviKtoryJeJehoFriendom = true;
-                                }else{
-                                    if(najnovsi == NULL) {
-                                        break;
-                                    }
-                                    if(najnovsi[strlen(najnovsi) - 1] == '\n') {
-                                        najnovsi[strlen(najnovsi) - 1] = 0;
-                                    }
-                                }
-                            }else{
-                                najnovsi = strtok(NULL, " ");
-                                if(!strcmp(najnovsi, user)){
-                                    poslalUzivateloviKtoryJeJehoFriendom = true;
-                                } else{
-                                    if(najnovsi == NULL) {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            fclose(fptr);
-
-            if(poslalUzivateloviKtoryJeJehoFriendom){
-                char *token = strtok(NULL, " ");
-
-                printf("tu ocakavam prve slovo obsahu msgC: %s\n",token);
-
-                bzero(text, 201);
-
-                while (token != NULL) {
-                    strcat(text, token);
-                    strcat(text, " ");
-                    token = strtok(NULL, " ");
-                }
-                text[strlen(text) - 1] = 0;
-                printf("tu ocakavam prve zlepeny obsahu z msgC: %s\n",text);
-
+            text[strlen(text) - 1] = 0;
 
 
 //            printf("Client(%d)\n", client->newsockfd);
@@ -438,57 +368,182 @@ void *messageHandler(void *d){
 //            printf("Pre osobu: %s\n", user);
 //            printf("S obsahom: %s\n", text);
 
-                fptr = fopen("msgLog.txt", "a");
-                if (fptr == NULL) {
-                    printf("Error! neviem otvorit subor msgLog.\n");
+            FILE *fptr;
+            fptr = fopen("msgLog.txt", "a");
+            if (fptr == NULL) {
+                printf("Error! neviem otvorit subor msgLog.\n");
+                break;
+            }
+            char txtt[300];
+            bzero(txtt, 300);
+            strcat(txtt, "s ");
+            strcat(txtt, client->name);
+            strcat(txtt, " ");
+            strcat(txtt, user);
+            strcat(txtt, " ");
+            strcat(txtt, text);
+
+            fprintf(fptr, txtt);
+            fclose(fptr);
+
+            char tmp[256];
+            bzero(tmp, 256);
+            strcat(tmp, "s ");
+            strcat(tmp, client->name);
+            strcat(tmp, ": ");
+            strcat(tmp, text);
+
+
+            int x = client->newsockfd;
+            for (int i = 4; i < data->size; i++) {
+                if (!strcmp(data->client[i].name, user)) {
+                    x = data->client[i].newsockfd;
                     break;
                 }
-                char txtt[300];
-                bzero(txtt, 300);
-                strcat(txtt, "s ");
-                strcat(txtt, client->name);
-                strcat(txtt, " ");
-                strcat(txtt, user);
-                strcat(txtt, " ");
-                strcat(txtt, text);
-
-                printf("ocakavany zapis do msgLog: %s\n",txtt);
-
-                fprintf(fptr, txtt);
-                fclose(fptr);
-
-                char tmp[256];
-                bzero(tmp, 256);
-                strcat(tmp, "s ");
-                strcat(tmp, client->name);
-                strcat(tmp, ": ");
-                strcat(tmp, text);
-
-                int x = client->newsockfd;
-                for (int i = 4; i < data->size; i++) {
-                    if (!strcmp(data->client[i].name, user)) {
-                        x = data->client[i].newsockfd;
-                        break;
-                    }
-                }
-                n = (int)write(x, tmp, strlen(tmp));
-                if (n < 0) {
-                    perror("Error writing to socket");
-                    exit(5);
-                    x = client->newsockfd;
-                    for (int i = 4; i < data->size; i++) {
-                        if (!strcmp(data->client[i].name, user)) {
-                            x = data->client[i].newsockfd;
-                            break;
-                        }
-                    }
-                    n = (int)write(x, tmp, strlen(tmp));
-                    if (n < 0) {
-                        perror("Error writing to socket");
-                        exit(5);
-                    }
-                }
             }
+            n = (int)write(x, tmp, strlen(tmp));
+            if (n < 0) {
+                perror("Error writing to socket");
+                exit(5);
+            }
+//            user = strtok(NULL, " ");
+//            bool poslalUzivateloviKtoryJeJehoFriendom = false;
+//
+//            FILE *fptr;
+//            fptr = fopen("friendData.txt", "r");
+//            if (fptr == NULL) {
+//                printf("Error! neviem otvorit subor friendData.\n");
+//                break;
+//            }
+//
+//            char line[300];
+//            bzero(line, 300);
+//
+//            while(fgets(line, sizeof(line), fptr)){
+//
+//                char* tname = "";
+//                tname = strtok(line, " ");
+//
+//                if(!strcmp(tname, client->name)){
+//
+//                    int pocetFriendovAkceptujuci = atoi(strtok(NULL, " "));
+//
+//                    if(pocetFriendovAkceptujuci > 0) {
+//
+//                        for(int i=0; i < pocetFriendovAkceptujuci ;i++){
+//
+//                            char* najnovsi = "";
+//
+//                            if(i == pocetFriendovAkceptujuci-1){
+//
+//                                najnovsi = strtok(NULL, " ");
+//                                if(najnovsi == NULL) {
+//                                    break;
+//                                }
+//
+//                                if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+//                                    najnovsi[strlen(najnovsi) - 1] = 0;
+//                                }
+//
+//                                if(!strcmp(najnovsi, user)){
+//                                    poslalUzivateloviKtoryJeJehoFriendom = true;
+//                                }else{
+//                                    if(najnovsi == NULL) {
+//                                        break;
+//                                    }
+//                                    if(najnovsi[strlen(najnovsi) - 1] == '\n') {
+//                                        najnovsi[strlen(najnovsi) - 1] = 0;
+//                                    }
+//                                }
+//                            }else{
+//                                najnovsi = strtok(NULL, " ");
+//                                if(!strcmp(najnovsi, user)){
+//                                    poslalUzivateloviKtoryJeJehoFriendom = true;
+//                                } else{
+//                                    if(najnovsi == NULL) {
+//                                        break;
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            fclose(fptr);
+//
+//            if(poslalUzivateloviKtoryJeJehoFriendom){
+//                char *token = strtok(NULL, " ");
+//
+//                printf("tu ocakavam prve slovo obsahu msgC: %s\n",token);
+//
+//                bzero(text, 201);
+//
+//                while (token != NULL) {
+//                    strcat(text, token);
+//                    strcat(text, " ");
+//                    token = strtok(NULL, " ");
+//                }
+//                text[strlen(text) - 1] = 0;
+//                printf("tu ocakavam prve zlepeny obsahu z msgC: %s\n",text);
+//
+//
+//
+////            printf("Client(%d)\n", client->newsockfd);
+////            printf("Pouzil prikaz: %s\n", command);
+////            printf("Pre osobu: %s\n", user);
+////            printf("S obsahom: %s\n", text);
+//
+//                fptr = fopen("msgLog.txt", "a");
+//                if (fptr == NULL) {
+//                    printf("Error! neviem otvorit subor msgLog.\n");
+//                    break;
+//                }
+//                char txtt[300];
+//                bzero(txtt, 300);
+//                strcat(txtt, "s ");
+//                strcat(txtt, client->name);
+//                strcat(txtt, " ");
+//                strcat(txtt, user);
+//                strcat(txtt, " ");
+//                strcat(txtt, text);
+//
+//                printf("ocakavany zapis do msgLog: %s\n",txtt);
+//
+//                fprintf(fptr, txtt);
+//                fclose(fptr);
+//
+//                char tmp[256];
+//                bzero(tmp, 256);
+//                strcat(tmp, "s ");
+//                strcat(tmp, client->name);
+//                strcat(tmp, ": ");
+//                strcat(tmp, text);
+//
+//                int x = client->newsockfd;
+//                for (int i = 4; i < data->size; i++) {
+//                    if (!strcmp(data->client[i].name, user)) {
+//                        x = data->client[i].newsockfd;
+//                        break;
+//                    }
+//                }
+//                n = (int)write(x, tmp, strlen(tmp));
+//                if (n < 0) {
+//                    perror("Error writing to socket");
+//                    exit(5);
+//                    x = client->newsockfd;
+//                    for (int i = 4; i < data->size; i++) {
+//                        if (!strcmp(data->client[i].name, user)) {
+//                            x = data->client[i].newsockfd;
+//                            break;
+//                        }
+//                    }
+//                    n = (int)write(x, tmp, strlen(tmp));
+//                    if (n < 0) {
+//                        perror("Error writing to socket");
+//                        exit(5);
+//                    }
+//                }
+//            }
         } else if (!strcmp(command, "show")) {
             char *temp = "*";
             char finall[300];
